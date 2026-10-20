@@ -8,13 +8,6 @@ export default function RootLayout() {
   const { session, loading } = useAuth();
   const segments = useSegments();
 
-<<<<<<< HEAD
-=======
-  const inAuthGroup = segments[0] === "login" || segments[0] === "register";
-
-  const inTabsGroup = segments[0] === "(tabs)";
-
->>>>>>> origin/main
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -23,13 +16,10 @@ export default function RootLayout() {
     );
   }
 
-<<<<<<< HEAD
   const inAuthGroup = segments[0] === "login" || segments[0] === "register";
 
   const inTabsGroup = segments[0] === "(tabs)";
 
-=======
->>>>>>> origin/main
   if (!session && inTabsGroup) {
     return <Redirect href="/login" />;
   }

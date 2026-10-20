@@ -2,7 +2,6 @@ import { supabase } from "./supabase";
 
 export type Role = "student" | "teacher" | "admin";
 
-<<<<<<< HEAD
 export type StudentYearLevel =
   | "1st Year"
   | "2nd Year"
@@ -27,46 +26,24 @@ export type TeacherVerificationRequest = {
   reviewed_at: string | null;
 };
 
-=======
->>>>>>> origin/main
 export type Profile = {
   id: string;
   email: string;
   full_name: string | null;
   role: Role;
-<<<<<<< HEAD
   department?: StudentDepartment | string | null;
   year_level?: StudentYearLevel | null;
   block?: StudentBlock | null;
-=======
->>>>>>> origin/main
 };
 
 export async function getProfile(userId: string): Promise<Profile | null> {
   const { data, error } = await supabase
     .from("profiles")
-<<<<<<< HEAD
     .select("id, email, full_name, role, department, year_level, block")
     .eq("id", userId)
     .maybeSingle();
 
   if (error || !data) {
-=======
-    .select("id, email, full_name, role")
-    .eq("id", userId)
-    .maybeSingle();
-
-  if (error) {
-    console.log("GET PROFILE ERROR:", error.message);
-    console.log("GET PROFILE CODE:", error.code);
-    return null;
-  }
-
-  console.log("GET PROFILE DATA:", data);
-
-  if (!data) {
-    console.log("GET PROFILE: No profile found for user:", userId);
->>>>>>> origin/main
     return null;
   }
 
@@ -75,11 +52,7 @@ export async function getProfile(userId: string): Promise<Profile | null> {
 
 export async function updateProfile(
   userId: string,
-<<<<<<< HEAD
   updates: { full_name?: string },
-=======
-  updates: { full_name?: string; role?: Role },
->>>>>>> origin/main
 ): Promise<{ error: string | null }> {
   const { error } = await supabase
     .from("profiles")
@@ -89,7 +62,6 @@ export async function updateProfile(
   return { error: error?.message ?? null };
 }
 
-<<<<<<< HEAD
 export async function updateUserRole(
   targetUserId: string,
   newRole: Role,
@@ -226,39 +198,3 @@ export async function reviewTeacherVerificationRequest(
 
   return { error: error?.message ?? null };
 }
-=======
-export type AdminProfile = {
-  id: string;
-  email: string;
-  full_name: string | null;
-  role: Role;
-};
-
-export async function getAllProfiles(): Promise<AdminProfile[]> {
-  const { data, error } = await supabase.rpc("get_all_profiles");
-
-  if (error || !data) {
-    console.log("GET ALL PROFILES ERROR:", error?.message);
-    return [];
-  }
-
-  return data as AdminProfile[];
-}
-
-export async function updateUserRole(
-  userId: string,
-  role: Role,
-): Promise<{ error: string | null }> {
-  const { error } = await supabase.rpc("admin_update_user_role", {
-    target_user_id: userId,
-    new_role: role,
-  });
-
-  if (error) {
-    console.log("UPDATE USER ROLE ERROR:", error.message);
-    return { error: error.message };
-  }
-
-  return { error: null };
-}
->>>>>>> origin/main

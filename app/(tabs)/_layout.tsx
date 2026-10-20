@@ -1,6 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Tabs } from "expo-router";
-<<<<<<< HEAD
 import { useCallback, useEffect, useState } from "react";
 
 import { COLORS } from "@/constants/colors";
@@ -88,147 +87,53 @@ export default function TabLayout() {
           commonScreenOptions.tabBarStyle,
           roleLoading ? { display: "none" } : undefined,
         ],
-=======
-
-import { COLORS } from "@/constants/colors";
-
-export default function TabLayout() {
-  return (
-    <Tabs
-      screenOptions={{
-        headerStyle: {
-          backgroundColor: COLORS.background,
-        },
-        headerShadowVisible: false,
-        headerTintColor: COLORS.textPrimary,
-        headerTitleStyle: {
-          fontWeight: "700",
-          fontSize: 20,
-        },
-
-        tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: COLORS.textSecondary,
-        tabBarHideOnKeyboard: true,
-        tabBarShowLabel: true,
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: "600",
-          marginTop: 2,
-          marginBottom: 2,
-        },
-        tabBarItemStyle: {
-          borderRadius: 14,
-          paddingTop: 4,
-        },
-        tabBarStyle: {
-          backgroundColor: COLORS.card,
-          borderTopColor: COLORS.border,
-          borderTopWidth: 1,
-          height: 72,
-          paddingTop: 7,
-          paddingBottom: 8,
-          elevation: 8,
-          shadowColor: COLORS.shadow,
-          shadowOffset: {
-            width: 0,
-            height: -3,
-          },
-          shadowOpacity: 0.06,
-          shadowRadius: 8,
-        },
->>>>>>> origin/main
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-<<<<<<< HEAD
           title: "Petal Pass",
           tabBarLabel: "Home",
           tabBarIcon: ({ color, focused }) =>
             icon(focused, "flower", "flower-outline", color),
-=======
-          title: "Home",
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? "home-sharp" : "home-outline"}
-              color={color}
-              size={23}
-            />
-          ),
->>>>>>> origin/main
         }}
       />
 
       <Tabs.Screen
         name="scan"
         options={{
-<<<<<<< HEAD
           title: "Scan Event",
           href: isStudent ? undefined : null,
           tabBarLabel: "Scan QR",
           tabBarIcon: ({ color, focused }) =>
             icon(focused, "qr-code", "qr-code-outline", color),
-=======
-          title: "Scan",
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? "qr-code" : "qr-code-outline"}
-              color={color}
-              size={23}
-            />
-          ),
->>>>>>> origin/main
         }}
       />
 
       <Tabs.Screen
         name="history"
         options={{
-<<<<<<< HEAD
           title: isTeacher ? "Event Attendance" : "Attendance History",
           href: isStudent || isTeacher ? undefined : null,
           tabBarLabel: isTeacher ? "Attendance" : "History",
           tabBarIcon: ({ color, focused }) =>
             icon(focused, "time", "time-outline", color),
-=======
-          title: "History",
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? "time" : "time-outline"}
-              color={color}
-              size={23}
-            />
-          ),
->>>>>>> origin/main
         }}
       />
 
       <Tabs.Screen
         name="profile"
         options={{
-<<<<<<< HEAD
           title: "My Profile",
           tabBarLabel: "Profile",
           tabBarIcon: ({ color, focused }) =>
             icon(focused, "person", "person-outline", color),
-=======
-          title: "Profile",
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? "person" : "person-outline"}
-              color={color}
-              size={23}
-            />
-          ),
->>>>>>> origin/main
         }}
       />
 
       <Tabs.Screen
         name="teacher"
         options={{
-<<<<<<< HEAD
           title: "Events",
           // Teachers and admins can access the event screen.
           href: isTeacher || isAdmin ? undefined : null,
@@ -248,23 +153,12 @@ export default function TabLayout() {
           tabBarLabel: "Users",
           tabBarIcon: ({ color, focused }) =>
             icon(focused, "people", "people-outline", color),
-=======
-          title: "Teacher",
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? "clipboard" : "clipboard-outline"}
-              color={color}
-              size={23}
-            />
-          ),
->>>>>>> origin/main
         }}
       />
 
       <Tabs.Screen
         name="admin"
         options={{
-<<<<<<< HEAD
           title: "Admin Dashboard",
           href: isAdmin ? undefined : null,
           tabBarLabel: "Admin",
@@ -275,22 +169,8 @@ export default function TabLayout() {
               "shield-checkmark-outline",
               color,
             ),
-=======
-          title: "Admin",
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? "shield-checkmark" : "shield-checkmark-outline"}
-              color={color}
-              size={23}
-            />
-          ),
->>>>>>> origin/main
         }}
       />
     </Tabs>
   );
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> origin/main
