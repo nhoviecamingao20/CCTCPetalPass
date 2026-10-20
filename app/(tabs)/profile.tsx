@@ -15,7 +15,14 @@ import {
 import AppButton from "@/components/AppButton";
 import { COLORS } from "@/constants/colors";
 import { signOut, useAuth } from "@/lib/auth";
-import { getProfile, updateProfile, type Profile } from "@/lib/profiles";
+import {
+  getMyTeacherVerificationRequest,
+  getProfile,
+  submitTeacherVerification,
+  updateProfile,
+  type Profile,
+  type TeacherVerificationRequest,
+} from "@/lib/profiles";
 
 export default function ProfileScreen() {
   const { user } = useAuth();
@@ -28,9 +35,16 @@ export default function ProfileScreen() {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  const [verificationRequest, setVerificationRequest] =
+    useState<TeacherVerificationRequest | null>(null);
+  const [teacherDetails, setTeacherDetails] = useState("");
+  const [loadingVerification, setLoadingVerification] = useState(false);
+  const [submittingVerification, setSubmittingVerification] = useState(false);
+
   const loadProfile = useCallback(async () => {
     if (!user) {
       setProfile(null);
+      setVerificationRequest(null);
       setFetchingProfile(false);
       return;
     }
@@ -38,12 +52,31 @@ export default function ProfileScreen() {
     setFetchingProfile(true);
 
     try {
-      const p = await getProfile(user.id);
-      setProfile(p);
-      setDraftName(p?.full_name ?? "");
+      const currentProfile = await getProfile(user.id);
+
+      setProfile(currentProfile);
+      setDraftName(currentProfile?.full_name ?? "");
+
+      if (currentProfile?.role === "student") {
+        setLoadingVerification(true);
+
+        const result = await getMyTeacherVerificationRequest();
+
+        if (result.error) {
+          setVerificationRequest(null);
+          Alert.alert("Unable to load teacher verification", result.error);
+        } else {
+          setVerificationRequest(result.request);
+          setTeacherDetails(result.request?.teacher_details ?? "");
+        }
+      } else {
+        setVerificationRequest(null);
+        setTeacherDetails("");
+      }
     } catch {
       Alert.alert("Unable to load profile", "Please try again.");
     } finally {
+      setLoadingVerification(false);
       setFetchingProfile(false);
     }
   }, [user]);
@@ -81,6 +114,7 @@ export default function ProfileScreen() {
       );
       setDraftName(trimmedName);
       setEditing(false);
+
       Alert.alert("Profile updated", "Your name has been saved.");
     } catch {
       Alert.alert("Error", "Something went wrong while saving your name.");
@@ -94,6 +128,102 @@ export default function ProfileScreen() {
     setEditing(false);
   };
 
+  const handleSubmitVerification = async () => {
+    if (!user) {
+      Alert.alert("Sign in required", "Please sign in before continuing.");
+      return;
+    }
+
+    if (profile?.role !== "student") {
+      Alert.alert(
+        "Student account required",
+        "Only student accounts can submit teacher verification requests.",
+      );
+      return;
+    }
+
+    const details = teacherDetails.trim();
+
+    if (!details) {
+      Alert.alert(
+        "Details required",
+        "Please provide information that the administrator can use to verify your teacher status.",
+      );
+      return;
+    }
+
+    if (details.length > 2000) {
+      Alert.alert(
+        "Details too long",
+        "Your verification details cannot exceed 2000 characters.",
+      );
+      return;
+    }
+
+    if (verificationRequest?.status === "pending") {
+      Alert.alert(
+        "Request already submitted",
+        "Your teacher verification request is awaiting administrator review.",
+      );
+      return;
+    }
+
+    if (verificationRequest?.status === "approved") {
+      Alert.alert(
+        "Already approved",
+        "Your teacher verification request has already been approved.",
+      );
+      return;
+    }
+
+    setSubmittingVerification(true);
+
+    try {
+      const result = await submitTeacherVerification(details);
+
+      if (result.error) {
+        Alert.alert("Submission failed", result.error);
+        return;
+      }
+
+      if (!result.requestId) {
+        Alert.alert(
+          "Request submitted",
+          "The database accepted the request, but its ID was not returned. Refresh your profile to check its status.",
+        );
+        await loadProfile();
+        return;
+      }
+
+      const refreshed = await getMyTeacherVerificationRequest();
+
+      if (refreshed.error) {
+        Alert.alert(
+          "Request submitted",
+          "Your request was submitted successfully. Refresh your profile to view its current status.",
+        );
+        return;
+      }
+
+      setVerificationRequest(refreshed.request);
+      setTeacherDetails(refreshed.request?.teacher_details ?? details);
+
+      Alert.alert(
+        "Request submitted",
+        "Your teacher verification request has been submitted. Your account will remain a student account until an administrator approves it.",
+      );
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Something went wrong. Please try again.";
+
+      Alert.alert("Submission failed", message);
+    } finally {
+      setSubmittingVerification(false);
+    }
+  };
+
   const handleSignOut = async () => {
     setLoading(true);
 
@@ -103,6 +233,7 @@ export default function ProfileScreen() {
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Failed to sign out.";
+
       Alert.alert("Sign-out failed", message);
     } finally {
       setLoading(false);
@@ -123,6 +254,20 @@ export default function ProfileScreen() {
     .slice(0, 2)
     .map((part) => part.charAt(0).toUpperCase())
     .join("");
+
+  const verificationStatus = verificationRequest?.status;
+
+  const verificationColor =
+    verificationStatus === "approved"
+      ? COLORS.success
+      : verificationStatus === "rejected"
+        ? COLORS.danger
+        : COLORS.warning;
+
+  const canSubmitVerification =
+    profile?.role === "student" &&
+    verificationStatus !== "pending" &&
+    verificationStatus !== "approved";
 
   return (
     <ScrollView
@@ -165,6 +310,7 @@ export default function ProfileScreen() {
                   color={COLORS.primary}
                 />
               )}
+
               <View style={styles.avatarFlower}>
                 <Ionicons name="flower" size={15} color={COLORS.primary} />
               </View>
@@ -173,6 +319,7 @@ export default function ProfileScreen() {
             <Text style={styles.profileName}>
               {profile?.full_name || "Welcome to Petal Pass"}
             </Text>
+
             <Text style={styles.profileEmail}>
               {user?.email ?? "No email available"}
             </Text>
@@ -205,6 +352,7 @@ export default function ProfileScreen() {
                 color={COLORS.primary}
               />
             </View>
+
             <View style={styles.sectionHeadingText}>
               <Text style={styles.sectionTitle}>Personal information</Text>
               <Text style={styles.sectionSubtitle}>
@@ -250,6 +398,7 @@ export default function ProfileScreen() {
                     ) : (
                       <Ionicons name="checkmark" size={17} color="#FFFFFF" />
                     )}
+
                     <Text style={styles.saveButtonText}>
                       {saving ? "Saving..." : "Save changes"}
                     </Text>
@@ -281,6 +430,7 @@ export default function ProfileScreen() {
             <View style={styles.fieldDivider} />
 
             <Text style={styles.label}>EMAIL ADDRESS</Text>
+
             <View style={styles.detailRow}>
               <View style={styles.detailIcon}>
                 <Ionicons
@@ -289,6 +439,7 @@ export default function ProfileScreen() {
                   color={COLORS.primary}
                 />
               </View>
+
               <Text style={styles.detailValue}>
                 {user?.email ?? "No email available"}
               </Text>
@@ -297,6 +448,7 @@ export default function ProfileScreen() {
             <View style={styles.fieldDivider} />
 
             <Text style={styles.label}>ACCOUNT ROLE</Text>
+
             <View style={styles.detailRow}>
               <View style={styles.detailIcon}>
                 <Ionicons
@@ -305,9 +457,206 @@ export default function ProfileScreen() {
                   color={COLORS.primary}
                 />
               </View>
+
               <Text style={styles.detailValue}>{roleLabel}</Text>
             </View>
           </View>
+
+          {profile?.role === "student" && (
+            <>
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionIcon}>
+                  <Ionicons
+                    name="ribbon-outline"
+                    size={21}
+                    color={COLORS.primary}
+                  />
+                </View>
+
+                <View style={styles.sectionHeadingText}>
+                  <Text style={styles.sectionTitle}>Teacher Verification</Text>
+                  <Text style={styles.sectionSubtitle}>
+                    Request administrator approval for a teacher account.
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.verificationCard}>
+                <View style={styles.verificationIntro}>
+                  <View style={styles.verificationIcon}>
+                    <Ionicons
+                      name="school-outline"
+                      size={25}
+                      color={COLORS.primary}
+                    />
+                  </View>
+
+                  <View style={styles.verificationIntroText}>
+                    <Text style={styles.verificationTitle}>
+                      Verify your teacher status
+                    </Text>
+                    <Text style={styles.verificationDescription}>
+                      Provide your teaching information for administrator
+                      review. Submitting a request does not automatically change
+                      your account role.
+                    </Text>
+                  </View>
+                </View>
+
+                {loadingVerification ? (
+                  <View style={styles.verificationLoading}>
+                    <ActivityIndicator size="small" color={COLORS.primary} />
+                    <Text style={styles.loadingText}>
+                      Checking verification status...
+                    </Text>
+                  </View>
+                ) : (
+                  <>
+                    {verificationRequest && (
+                      <View
+                        style={[
+                          styles.statusPanel,
+                          {
+                            borderColor: verificationColor,
+                            backgroundColor: `${verificationColor}12`,
+                          },
+                        ]}
+                      >
+                        <View style={styles.statusHeader}>
+                          <Ionicons
+                            name={
+                              verificationStatus === "approved"
+                                ? "checkmark-circle"
+                                : verificationStatus === "rejected"
+                                  ? "close-circle"
+                                  : "time"
+                            }
+                            size={21}
+                            color={verificationColor}
+                          />
+
+                          <Text
+                            style={[
+                              styles.statusTitle,
+                              { color: verificationColor },
+                            ]}
+                          >
+                            {verificationStatus === "approved"
+                              ? "Request approved"
+                              : verificationStatus === "rejected"
+                                ? "Request rejected"
+                                : "Awaiting review"}
+                          </Text>
+                        </View>
+
+                        <Text style={styles.statusDescription}>
+                          {verificationStatus === "approved"
+                            ? "Your request was approved. Your account role will reflect the administrator's decision after your profile refreshes."
+                            : verificationStatus === "rejected"
+                              ? "Your request was not approved. Review the administrator's notes below and update your details before resubmitting."
+                              : "Your request has been submitted. Your account remains a student account while you wait for the administrator's decision."}
+                        </Text>
+
+                        {verificationRequest.review_notes && (
+                          <View style={styles.reviewNotes}>
+                            <Text style={styles.reviewNotesLabel}>
+                              ADMINISTRATOR NOTES
+                            </Text>
+                            <Text style={styles.reviewNotesText}>
+                              {verificationRequest.review_notes}
+                            </Text>
+                          </View>
+                        )}
+
+                        <Text style={styles.requestDate}>
+                          Submitted{" "}
+                          {new Date(
+                            verificationRequest.created_at,
+                          ).toLocaleDateString()}
+                        </Text>
+                      </View>
+                    )}
+
+                    {canSubmitVerification && (
+                      <>
+                        <Text style={styles.label}>
+                          {verificationStatus === "rejected"
+                            ? "UPDATE YOUR VERIFICATION DETAILS"
+                            : "TEACHER VERIFICATION DETAILS"}
+                        </Text>
+
+                        <TextInput
+                          value={teacherDetails}
+                          onChangeText={setTeacherDetails}
+                          placeholder={
+                            "Describe your teaching role, department, employee or faculty ID (if applicable), and other details that help verify your status."
+                          }
+                          placeholderTextColor={COLORS.textSecondary}
+                          style={styles.verificationInput}
+                          multiline
+                          textAlignVertical="top"
+                          maxLength={2000}
+                          editable={!submittingVerification}
+                          accessibilityLabel="Teacher verification details"
+                        />
+
+                        <Text style={styles.characterCount}>
+                          {teacherDetails.length}/2000 characters
+                        </Text>
+
+                        <View style={styles.verificationNotice}>
+                          <Ionicons
+                            name="information-circle-outline"
+                            size={18}
+                            color={COLORS.primary}
+                          />
+                          <Text style={styles.verificationNoticeText}>
+                            Do not include passwords or other sensitive account
+                            credentials. Only an administrator can approve your
+                            request.
+                          </Text>
+                        </View>
+
+                        <AppButton
+                          title={
+                            submittingVerification
+                              ? "Submitting Request..."
+                              : verificationStatus === "rejected"
+                                ? "Resubmit Verification"
+                                : "Submit Verification Request"
+                          }
+                          icon="paper-plane-outline"
+                          onPress={handleSubmitVerification}
+                          disabled={submittingVerification}
+                        />
+
+                        {submittingVerification && (
+                          <ActivityIndicator
+                            size="small"
+                            color={COLORS.primary}
+                          />
+                        )}
+                      </>
+                    )}
+
+                    {verificationStatus === "pending" && (
+                      <View style={styles.pendingFooter}>
+                        <Ionicons
+                          name="lock-closed-outline"
+                          size={16}
+                          color={COLORS.textSecondary}
+                        />
+                        <Text style={styles.pendingFooterText}>
+                          Your request cannot be edited while it is awaiting
+                          review.
+                        </Text>
+                      </View>
+                    )}
+                  </>
+                )}
+              </View>
+            </>
+          )}
 
           <View style={styles.accountNote}>
             <Ionicons
@@ -315,6 +664,7 @@ export default function ProfileScreen() {
               size={21}
               color={COLORS.primary}
             />
+
             <View style={styles.noteTextContainer}>
               <Text style={styles.noteTitle}>Account information</Text>
               <Text style={styles.noteText}>
@@ -515,6 +865,7 @@ const styles = StyleSheet.create({
   sectionSubtitle: {
     fontSize: 11,
     color: COLORS.textSecondary,
+    lineHeight: 16,
   },
   infoCard: {
     backgroundColor: COLORS.card,
@@ -522,7 +873,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
     padding: 18,
-    marginBottom: 17,
+    marginBottom: 27,
   },
   label: {
     fontSize: 9,
@@ -627,6 +978,133 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
     color: COLORS.textPrimary,
+  },
+  verificationCard: {
+    backgroundColor: COLORS.card,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 18,
+    marginBottom: 27,
+    gap: 15,
+  },
+  verificationIntro: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+  },
+  verificationIcon: {
+    width: 45,
+    height: 45,
+    borderRadius: 15,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  verificationIntroText: {
+    flex: 1,
+    gap: 5,
+  },
+  verificationTitle: {
+    fontSize: 14,
+    fontWeight: "900",
+    color: COLORS.textPrimary,
+  },
+  verificationDescription: {
+    fontSize: 11,
+    lineHeight: 18,
+    color: COLORS.textSecondary,
+  },
+  verificationLoading: {
+    paddingVertical: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+  },
+  statusPanel: {
+    borderWidth: 1,
+    borderRadius: 15,
+    padding: 13,
+    gap: 9,
+  },
+  statusHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  statusTitle: {
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  statusDescription: {
+    color: COLORS.textPrimary,
+    fontSize: 11,
+    lineHeight: 18,
+  },
+  reviewNotes: {
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    paddingTop: 10,
+    gap: 5,
+  },
+  reviewNotesLabel: {
+    color: COLORS.textSecondary,
+    fontSize: 9,
+    fontWeight: "900",
+    letterSpacing: 1,
+  },
+  reviewNotesText: {
+    color: COLORS.textPrimary,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  requestDate: {
+    color: COLORS.textSecondary,
+    fontSize: 10,
+  },
+  verificationInput: {
+    minHeight: 135,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 14,
+    backgroundColor: COLORS.background,
+    padding: 13,
+    fontSize: 12,
+    lineHeight: 19,
+    color: COLORS.textPrimary,
+  },
+  characterCount: {
+    marginTop: -9,
+    textAlign: "right",
+    color: COLORS.textSecondary,
+    fontSize: 10,
+  },
+  verificationNotice: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    padding: 11,
+  },
+  verificationNoticeText: {
+    flex: 1,
+    color: COLORS.textSecondary,
+    fontSize: 10,
+    lineHeight: 16,
+  },
+  pendingFooter: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+  },
+  pendingFooterText: {
+    flex: 1,
+    color: COLORS.textSecondary,
+    fontSize: 10,
+    lineHeight: 16,
   },
   accountNote: {
     flexDirection: "row",
