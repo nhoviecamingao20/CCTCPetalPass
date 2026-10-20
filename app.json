@@ -1,10 +1,17 @@
+<<<<<<< HEAD
 {
   "expo": {
     "name": "CCTC Petal Pass",
+=======
+    {
+  "expo": {
+    "name": "qr-app",
+>>>>>>> origin/main
     "slug": "qr-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
+<<<<<<< HEAD
     "scheme": "petalpass",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
@@ -14,6 +21,19 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#FFF5F8",
+=======
+    "scheme": "qrapp",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+
+    "ios": {
+      "supportsTablet": true
+    },
+
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+>>>>>>> origin/main
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -22,10 +42,18 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.nhovie.qrapp"
     },
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/main
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/main
     "plugins": [
       "expo-router",
       [
@@ -34,9 +62,15 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
+<<<<<<< HEAD
           "backgroundColor": "#FFF5F8",
           "dark": {
             "backgroundColor": "#FFF5F8"
+=======
+          "backgroundColor": "#ffffff",
+          "dark": {
+            "backgroundColor": "#000000"
+>>>>>>> origin/main
           }
         }
       ],
@@ -44,16 +78,28 @@
       "@react-native-community/datetimepicker",
       "expo-secure-store"
     ],
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/main
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
     },
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/main
     "extra": {
       "router": {},
       "eas": {
         "projectId": "0c662c7c-26d8-4302-b2b3-f6fede5bebee"
       }
     },
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/main
     "owner": "nhovie"
   }
 }

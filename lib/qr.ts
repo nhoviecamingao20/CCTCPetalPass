@@ -14,6 +14,7 @@ export function buildQRPayload(event: {
 }): string {
   const payload: QRPayload = {
     v: 1,
+<<<<<<< HEAD
     event: event.eventId.trim(),
   };
 
@@ -28,6 +29,14 @@ export function buildQRPayload(event: {
   if (event.end) {
     payload.end = event.end;
   }
+=======
+    event: event.eventId,
+  };
+
+  if (event.title) payload.title = event.title;
+  if (event.start) payload.start = event.start;
+  if (event.end) payload.end = event.end;
+>>>>>>> origin/main
 
   return JSON.stringify(payload);
 }
@@ -36,6 +45,7 @@ export type ParseQRResult =
   | { ok: true; payload: QRPayload }
   | { ok: false; message: string };
 
+<<<<<<< HEAD
 function isValidOptionalDate(value: unknown): value is string | undefined {
   if (value === undefined) {
     return true;
@@ -113,3 +123,60 @@ export function parseQRPayload(raw: string): ParseQRResult {
     },
   };
 }
+=======
+export function parseQRPayload(raw: string): ParseQRResult {
+  const value = raw.trim();
+
+  if (!value) {
+    return {
+      ok: false,
+      message: "Invalid QR code.",
+    };
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(value);
+
+    if (typeof parsed !== "object" || parsed === null) {
+      return {
+        ok: false,
+        message: "Not an attendance QR code.",
+      };
+    }
+
+    const payload = parsed as Record<string, unknown>;
+
+    if (
+      payload.v !== 1 ||
+      typeof payload.event !== "string" ||
+      !payload.event.trim()
+    ) {
+      return {
+        ok: false,
+        message: "Not an attendance QR code.",
+      };
+    }
+
+    return {
+      ok: true,
+      payload: {
+        v: 1,
+        event: payload.event,
+        ...(typeof payload.title === "string" ? { title: payload.title } : {}),
+        ...(typeof payload.start === "string" ? { start: payload.start } : {}),
+        ...(typeof payload.end === "string" ? { end: payload.end } : {}),
+      },
+    };
+  } catch {
+    // Admin Dashboard QR codes may contain a plain event code,
+    // such as "VER - T012" or "HACK - E001".
+    return {
+      ok: true,
+      payload: {
+        v: 1,
+        event: value,
+      },
+    };
+  }
+}
+>>>>>>> origin/main

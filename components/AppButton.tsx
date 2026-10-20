@@ -11,6 +11,7 @@ type Props = {
   disabled?: boolean;
 };
 
+<<<<<<< HEAD
 export default function AppButton({ title, icon, theme, onPress }: Props) {
   if (theme === "primary") {
     return (
@@ -60,6 +61,54 @@ export default function AppButton({ title, icon, theme, onPress }: Props) {
           style={styles.icon}
         />
         <Text style={styles.label}>{title}</Text>
+=======
+export default function AppButton({
+  title,
+  icon,
+  theme,
+  onPress,
+  disabled = false,
+}: Props) {
+  const isPrimary = theme === "primary";
+
+  return (
+    <View style={styles.buttonOuter}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={title}
+        accessibilityState={{ disabled }}
+        disabled={disabled}
+        onPress={onPress}
+        style={({ pressed }) => [
+          styles.buttonInner,
+          isPrimary ? styles.primaryButton : styles.secondaryButton,
+          disabled && styles.disabledButton,
+          pressed && !disabled && styles.pressedButton,
+        ]}
+      >
+        <Ionicons
+          name={icon}
+          size={21}
+          color={
+            disabled
+              ? COLORS.textMuted
+              : isPrimary
+                ? COLORS.textOnPrimary
+                : COLORS.primary
+          }
+          style={styles.icon}
+        />
+
+        <Text
+          style={[
+            styles.label,
+            isPrimary && styles.primaryLabel,
+            disabled && styles.disabledLabel,
+          ]}
+        >
+          {title}
+        </Text>
+>>>>>>> origin/main
       </Pressable>
     </View>
   );
@@ -72,12 +121,19 @@ const styles = StyleSheet.create({
   },
 
   buttonInner: {
+<<<<<<< HEAD
     borderRadius: 10,
     paddingVertical: 16,
+=======
+    minHeight: 54,
+    borderRadius: 16,
+    paddingVertical: 15,
+>>>>>>> origin/main
     paddingHorizontal: 20,
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row",
+<<<<<<< HEAD
     backgroundColor: COLORS.card,
     borderWidth: 1,
     borderColor: COLORS.border,
@@ -92,4 +148,53 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: COLORS.textPrimary,
   },
+=======
+    borderWidth: 1,
+  },
+
+  primaryButton: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.14,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+
+  secondaryButton: {
+    backgroundColor: COLORS.card,
+    borderColor: COLORS.border,
+  },
+
+  pressedButton: {
+    opacity: 0.82,
+    transform: [{ scale: 0.99 }],
+  },
+
+  disabledButton: {
+    backgroundColor: COLORS.surface,
+    borderColor: COLORS.border,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+
+  icon: {
+    marginRight: 10,
+  },
+
+  label: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: COLORS.textPrimary,
+  },
+
+  primaryLabel: {
+    color: COLORS.textOnPrimary,
+  },
+
+  disabledLabel: {
+    color: COLORS.textMuted,
+  },
+>>>>>>> origin/main
 });

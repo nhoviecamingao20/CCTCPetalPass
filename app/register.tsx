@@ -1,23 +1,37 @@
+<<<<<<< HEAD
 import { Ionicons } from "@expo/vector-icons";
+=======
+
+import Ionicons from "@expo/vector-icons/Ionicons";
+>>>>>>> origin/main
 import { Link, router } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
   Keyboard,
   KeyboardAvoidingView,
+<<<<<<< HEAD
   Modal,
   Platform,
   Pressable,
+=======
+  Platform,
+>>>>>>> origin/main
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
+<<<<<<< HEAD
+=======
+  TouchableOpacity,
+>>>>>>> origin/main
   TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import AppButton from "@/components/AppButton";
+<<<<<<< HEAD
 import { COLORS } from "@/constants/colors";
 import {
   signUp,
@@ -53,10 +67,16 @@ const YEAR_LEVELS: StudentYearLevel[] = [
   "3rd Year",
   "4th Year",
 ];
+=======
+import Header from "@/components/Header";
+import { COLORS } from "@/constants/colors";
+import { signUp } from "@/lib/auth";
+>>>>>>> origin/main
 
 export default function RegisterScreen() {
   const insets = useSafeAreaInsets();
 
+<<<<<<< HEAD
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -70,13 +90,29 @@ export default function RegisterScreen() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+=======
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+>>>>>>> origin/main
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
+<<<<<<< HEAD
   const selectedDepartment = DEPARTMENTS.find(
     (item) => item.value === department,
   )!;
+=======
+  const clearError = () => {
+    if (error) setError(null);
+  };
+>>>>>>> origin/main
 
   const handleRegister = async () => {
     if (loading) return;
@@ -89,7 +125,11 @@ export default function RegisterScreen() {
     }
 
     if (password.length < 6) {
+<<<<<<< HEAD
       setError("Your password must contain at least 6 characters.");
+=======
+      setError("Your password must be at least 6 characters.");
+>>>>>>> origin/main
       return;
     }
 
@@ -98,6 +138,7 @@ export default function RegisterScreen() {
       return;
     }
 
+<<<<<<< HEAD
     const normalizedEmail = email.trim().toLowerCase();
 
     setLoading(true);
@@ -106,25 +147,40 @@ export default function RegisterScreen() {
     try {
       const { data, error: authError } = await signUp(
         normalizedEmail,
+=======
+    setLoading(true);
+
+    try {
+      const { data, error: authError } = await signUp(
+        email.trim(),
+>>>>>>> origin/main
         password,
         {
           full_name: fullName.trim(),
           role: "student",
+<<<<<<< HEAD
           department,
           year_level: yearLevel,
+=======
+>>>>>>> origin/main
         },
       );
 
       if (authError) {
         setError(authError.message);
+<<<<<<< HEAD
         return;
       }
 
       if (data.session) {
+=======
+      } else if (data.session) {
+>>>>>>> origin/main
         router.replace("/(tabs)");
       } else {
         setSuccess(true);
       }
+<<<<<<< HEAD
     } catch (registrationError) {
       console.error("Registration failed:", registrationError);
 
@@ -132,17 +188,37 @@ export default function RegisterScreen() {
         registrationError instanceof Error
           ? registrationError.message
           : "Something went wrong. Please try again.",
+=======
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "An unexpected error occurred. Please try again.",
+>>>>>>> origin/main
       );
     } finally {
       setLoading(false);
     }
   };
 
+<<<<<<< HEAD
   const closeDepartmentModal = () => setShowDepartmentModal(false);
   const closeYearModal = () => setShowYearModal(false);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+=======
+  return (
+    <View
+      style={[
+        styles.container,
+        {
+          paddingTop: insets.top,
+          paddingBottom: insets.bottom,
+        },
+      ]}
+    >
+>>>>>>> origin/main
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -154,6 +230,7 @@ export default function RegisterScreen() {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
+<<<<<<< HEAD
             <View style={styles.brandHeader}>
               <View style={styles.brandIcon}>
                 <Ionicons
@@ -167,6 +244,36 @@ export default function RegisterScreen() {
 
               <Text style={styles.brandSubtitle}>
                 CONSOLATRIX COLLEGE OF TOLEDO CITY
+=======
+            <View style={styles.headerContainer}>
+              <View style={styles.brandIcon}>
+                <Ionicons
+                  name="qr-code-outline"
+                  size={34}
+                  color={COLORS.textOnPrimary}
+                />
+              </View>
+
+              <Header title="QR Attendance" />
+
+              <View style={styles.brandBadge}>
+                <Ionicons
+                  name="person-add-outline"
+                  size={14}
+                  color={COLORS.primary}
+                />
+                <Text style={styles.brandBadgeText}>
+                  JOIN YOUR SCHOOL COMMUNITY
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.welcomeSection}>
+              <Text style={styles.eyebrow}>GET STARTED</Text>
+              <Text style={styles.title}>Create your account</Text>
+              <Text style={styles.subtitle}>
+                Register to make school event attendance simple and secure.
+>>>>>>> origin/main
               </Text>
             </View>
 
@@ -174,6 +281,7 @@ export default function RegisterScreen() {
               <View style={styles.successCard}>
                 <View style={styles.successIcon}>
                   <Ionicons
+<<<<<<< HEAD
                     name="mail-open-outline"
                     size={34}
                     color={COLORS.primary}
@@ -199,6 +307,21 @@ export default function RegisterScreen() {
                   />
                 </View>
 
+=======
+                    name="checkmark-circle-outline"
+                    size={44}
+                    color={COLORS.success}
+                  />
+                </View>
+
+                <Text style={styles.successTitle}>You're registered!</Text>
+                <Text style={styles.successText}>
+                  Your account has been created for {email.trim()}. If email
+                  confirmation is enabled in Supabase, check your inbox for the
+                  confirmation link before signing in.
+                </Text>
+
+>>>>>>> origin/main
                 <AppButton
                   theme="primary"
                   title="Back to Sign In"
@@ -207,6 +330,7 @@ export default function RegisterScreen() {
                 />
               </View>
             ) : (
+<<<<<<< HEAD
               <>
                 <View style={styles.heading}>
                   <Text style={styles.eyebrow}>JOIN THE CAMPUS COMMUNITY</Text>
@@ -309,6 +433,101 @@ export default function RegisterScreen() {
                       onPress={() => setShowPassword((value) => !value)}
                       disabled={loading}
                       hitSlop={8}
+=======
+              <View style={styles.formCard}>
+                <Text style={styles.formTitle}>Your details</Text>
+                <Text style={styles.formSubtitle}>
+                  Fill in the information below to register.
+                </Text>
+
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>Full name</Text>
+                  <View style={styles.inputWrapper}>
+                    <Ionicons
+                      name="person-outline"
+                      size={20}
+                      color={COLORS.primary}
+                      style={styles.inputIcon}
+                    />
+                    <TextInput
+                      style={styles.input}
+                      value={fullName}
+                      onChangeText={(value) => {
+                        setFullName(value);
+                        clearError();
+                      }}
+                      placeholder="Enter your full name"
+                      placeholderTextColor={COLORS.textMuted}
+                      autoCapitalize="words"
+                      autoCorrect={false}
+                      textContentType="name"
+                      editable={!loading}
+                      returnKeyType="next"
+                      accessibilityLabel="Full name"
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>Email address</Text>
+                  <View style={styles.inputWrapper}>
+                    <Ionicons
+                      name="mail-outline"
+                      size={20}
+                      color={COLORS.primary}
+                      style={styles.inputIcon}
+                    />
+                    <TextInput
+                      style={styles.input}
+                      value={email}
+                      onChangeText={(value) => {
+                        setEmail(value);
+                        clearError();
+                      }}
+                      placeholder="your.email@school.edu"
+                      placeholderTextColor={COLORS.textMuted}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      keyboardType="email-address"
+                      textContentType="emailAddress"
+                      autoComplete="email"
+                      editable={!loading}
+                      returnKeyType="next"
+                      accessibilityLabel="Email address"
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>Password</Text>
+                  <View style={styles.inputWrapper}>
+                    <Ionicons
+                      name="lock-closed-outline"
+                      size={20}
+                      color={COLORS.primary}
+                      style={styles.inputIcon}
+                    />
+                    <TextInput
+                      style={styles.input}
+                      value={password}
+                      onChangeText={(value) => {
+                        setPassword(value);
+                        clearError();
+                      }}
+                      placeholder="At least 6 characters"
+                      placeholderTextColor={COLORS.textMuted}
+                      secureTextEntry={!showPassword}
+                      textContentType="newPassword"
+                      autoComplete="new-password"
+                      editable={!loading}
+                      returnKeyType="next"
+                      accessibilityLabel="Password"
+                    />
+                    <TouchableOpacity
+                      style={styles.passwordToggle}
+                      onPress={() => setShowPassword((current) => !current)}
+                      disabled={loading}
+>>>>>>> origin/main
                       accessibilityRole="button"
                       accessibilityLabel={
                         showPassword ? "Hide password" : "Show password"
@@ -316,6 +535,7 @@ export default function RegisterScreen() {
                     >
                       <Ionicons
                         name={showPassword ? "eye-off-outline" : "eye-outline"}
+<<<<<<< HEAD
                         size={20}
                         color={COLORS.textSecondary}
                       />
@@ -353,6 +573,47 @@ export default function RegisterScreen() {
                       onPress={() => setShowConfirmPassword((value) => !value)}
                       disabled={loading}
                       hitSlop={8}
+=======
+                        size={21}
+                        color={COLORS.textSecondary}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>Confirm password</Text>
+                  <View style={styles.inputWrapper}>
+                    <Ionicons
+                      name="shield-checkmark-outline"
+                      size={20}
+                      color={COLORS.primary}
+                      style={styles.inputIcon}
+                    />
+                    <TextInput
+                      style={styles.input}
+                      value={confirmPassword}
+                      onChangeText={(value) => {
+                        setConfirmPassword(value);
+                        clearError();
+                      }}
+                      placeholder="Re-enter your password"
+                      placeholderTextColor={COLORS.textMuted}
+                      secureTextEntry={!showConfirmPassword}
+                      textContentType="newPassword"
+                      autoComplete="new-password"
+                      editable={!loading}
+                      returnKeyType="done"
+                      onSubmitEditing={handleRegister}
+                      accessibilityLabel="Confirm password"
+                    />
+                    <TouchableOpacity
+                      style={styles.passwordToggle}
+                      onPress={() =>
+                        setShowConfirmPassword((current) => !current)
+                      }
+                      disabled={loading}
+>>>>>>> origin/main
                       accessibilityRole="button"
                       accessibilityLabel={
                         showConfirmPassword
@@ -366,6 +627,7 @@ export default function RegisterScreen() {
                             ? "eye-off-outline"
                             : "eye-outline"
                         }
+<<<<<<< HEAD
                         size={20}
                         color={COLORS.textSecondary}
                       />
@@ -483,6 +745,30 @@ export default function RegisterScreen() {
                   {loading ? (
                     <View style={styles.loadingContainer}>
                       <ActivityIndicator size="large" color={COLORS.primary} />
+=======
+                        size={21}
+                        color={COLORS.textSecondary}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {error ? (
+                  <View style={styles.errorContainer}>
+                    <Ionicons
+                      name="alert-circle-outline"
+                      size={19}
+                      color={COLORS.danger}
+                    />
+                    <Text style={styles.error}>{error}</Text>
+                  </View>
+                ) : null}
+
+                <View style={styles.buttonContainer}>
+                  {loading ? (
+                    <View style={styles.loadingContainer}>
+                      <ActivityIndicator size="small" color={COLORS.primary} />
+>>>>>>> origin/main
                       <Text style={styles.loadingText}>
                         Creating your account...
                       </Text>
@@ -490,11 +776,16 @@ export default function RegisterScreen() {
                   ) : (
                     <AppButton
                       theme="primary"
+<<<<<<< HEAD
                       title="Create My Account"
+=======
+                      title="Create Account"
+>>>>>>> origin/main
                       icon="person-add-outline"
                       onPress={handleRegister}
                     />
                   )}
+<<<<<<< HEAD
 
                   <View style={styles.securityNote}>
                     <Ionicons
@@ -771,6 +1062,36 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
     <View style={styles.summaryRow}>
       <Text style={styles.summaryLabel}>{label}</Text>
       <Text style={styles.summaryValue}>{value}</Text>
+=======
+                </View>
+
+                <View style={styles.securityNote}>
+                  <Ionicons
+                    name="shield-checkmark-outline"
+                    size={16}
+                    color={COLORS.success}
+                  />
+                  <Text style={styles.securityText}>
+                    Your account details are handled securely.
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            <View style={styles.signinContainer}>
+              <Text style={styles.signinText}>Already have an account?</Text>
+              <Link href="/login" asChild>
+                <Text style={styles.signinLink}>Sign in</Text>
+              </Link>
+            </View>
+
+            <Text style={styles.footer}>
+              QR-ATT • Smart School Event Attendance
+            </Text>
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+>>>>>>> origin/main
     </View>
   );
 }
@@ -785,6 +1106,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+<<<<<<< HEAD
     paddingHorizontal: 21,
     paddingBottom: 30,
   },
@@ -837,10 +1159,71 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 13,
     lineHeight: 20,
+=======
+    paddingHorizontal: 24,
+    paddingTop: 18,
+    paddingBottom: 28,
+  },
+  headerContainer: {
+    alignItems: "center",
+    marginBottom: 28,
+  },
+  brandIcon: {
+    width: 70,
+    height: 70,
+    borderRadius: 23,
+    backgroundColor: COLORS.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  brandBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: COLORS.primarySoft,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    marginTop: 10,
+  },
+  brandBadgeText: {
+    color: COLORS.primary,
+    fontSize: 9,
+    fontWeight: "800",
+    letterSpacing: 1,
+  },
+  welcomeSection: {
+    marginBottom: 22,
+  },
+  eyebrow: {
+    color: COLORS.primary,
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 2,
+    marginBottom: 8,
+  },
+  title: {
+    fontSize: 28,
+    lineHeight: 35,
+    fontWeight: "800",
+    color: COLORS.textPrimary,
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 14,
+    lineHeight: 22,
+>>>>>>> origin/main
     color: COLORS.textSecondary,
   },
   formCard: {
     backgroundColor: COLORS.card,
+<<<<<<< HEAD
     borderWidth: 1,
     borderColor: COLORS.border,
     borderRadius: 24,
@@ -892,10 +1275,56 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     borderRadius: 13,
     paddingHorizontal: 12,
+=======
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 20,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.05,
+    shadowRadius: 14,
+    elevation: 2,
+  },
+  formTitle: {
+    fontSize: 21,
+    fontWeight: "800",
+    color: COLORS.textPrimary,
+    marginBottom: 6,
+  },
+  formSubtitle: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: COLORS.textSecondary,
+    marginBottom: 20,
+  },
+  fieldGroup: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: COLORS.textPrimary,
+    marginBottom: 8,
+  },
+  inputWrapper: {
+    minHeight: 53,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.background,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: 13,
+  },
+  inputIcon: {
+    marginRight: 10,
+>>>>>>> origin/main
   },
   input: {
     flex: 1,
     minWidth: 0,
+<<<<<<< HEAD
     paddingVertical: 11,
     fontSize: 13,
     color: COLORS.textPrimary,
@@ -976,10 +1405,20 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 17,
     color: COLORS.textSecondary,
+=======
+    paddingVertical: 13,
+    fontSize: 14,
+    color: COLORS.textPrimary,
+  },
+  passwordToggle: {
+    padding: 5,
+    marginLeft: 3,
+>>>>>>> origin/main
   },
   errorContainer: {
     flexDirection: "row",
     alignItems: "flex-start",
+<<<<<<< HEAD
     gap: 8,
     backgroundColor: "#FFF0F0",
     borderRadius: 12,
@@ -1013,6 +1452,46 @@ const styles = StyleSheet.create({
     fontSize: 10,
     lineHeight: 15,
     color: COLORS.textSecondary,
+=======
+    backgroundColor: COLORS.dangerBackground,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 14,
+    gap: 8,
+  },
+  error: {
+    flex: 1,
+    color: COLORS.danger,
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  buttonContainer: {
+    marginTop: 5,
+  },
+  loadingContainer: {
+    minHeight: 54,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+  },
+  loadingText: {
+    color: COLORS.primary,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  securityNote: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+    marginTop: 8,
+  },
+  securityText: {
+    color: COLORS.textSecondary,
+    fontSize: 10,
+    textAlign: "center",
+>>>>>>> origin/main
   },
   successCard: {
     alignItems: "center",
@@ -1021,6 +1500,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
     padding: 24,
+<<<<<<< HEAD
     gap: 14,
   },
   successIcon: {
@@ -1285,5 +1765,54 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "800",
     color: COLORS.textPrimary,
+=======
+  },
+  successIcon: {
+    width: 76,
+    height: 76,
+    borderRadius: 25,
+    backgroundColor: COLORS.successBackground,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+  },
+  successTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: COLORS.textPrimary,
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  successText: {
+    fontSize: 14,
+    lineHeight: 22,
+    color: COLORS.textSecondary,
+    textAlign: "center",
+    marginBottom: 22,
+  },
+  signinContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 5,
+    marginTop: 25,
+  },
+  signinText: {
+    color: COLORS.textSecondary,
+    fontSize: 13,
+  },
+  signinLink: {
+    color: COLORS.primary,
+    fontSize: 13,
+    fontWeight: "800",
+    paddingVertical: 4,
+  },
+  footer: {
+    color: COLORS.textMuted,
+    fontSize: 10,
+    textAlign: "center",
+    marginTop: 22,
+>>>>>>> origin/main
   },
 });

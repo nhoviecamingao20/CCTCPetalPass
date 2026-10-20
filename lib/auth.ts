@@ -1,5 +1,9 @@
 import type { Session, User } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/main
 import { supabase } from "./supabase";
 
 type AuthState = {
@@ -12,7 +16,11 @@ let globalSession: Session | null = null;
 let globalUser: User | null = null;
 let globalLoading = false;
 
+<<<<<<< HEAD
 const listeners = new Set<() => void>();
+=======
+const listeners: Set<() => void> = new Set();
+>>>>>>> origin/main
 
 function notify() {
   listeners.forEach((listener) => listener());
@@ -45,6 +53,7 @@ export function useAuth(): AuthState {
   };
 }
 
+<<<<<<< HEAD
 export type StudentYearLevel =
   | "1st Year"
   | "2nd Year"
@@ -58,6 +67,11 @@ export type SignUpProfile = {
   role: "student";
   department: StudentDepartment;
   year_level: StudentYearLevel;
+=======
+export type SignUpProfile = {
+  full_name: string;
+  role: "student" | "teacher";
+>>>>>>> origin/main
 };
 
 export async function signUp(
@@ -65,6 +79,7 @@ export async function signUp(
   password: string,
   profile?: SignUpProfile,
 ) {
+<<<<<<< HEAD
   const normalizedEmail = email.trim().toLowerCase();
 
   const { data, error } = await supabase.auth.signUp({
@@ -112,11 +127,33 @@ export async function signUp(
   }
 
   return { data, error: null };
+=======
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        full_name: profile?.full_name.trim() ?? "",
+        role: "student",
+      },
+    },
+  });
+
+  if (!error && data.session) {
+    setAuth(data.session);
+  }
+
+  return { data, error };
+>>>>>>> origin/main
 }
 
 export async function signIn(email: string, password: string) {
   const { data, error } = await supabase.auth.signInWithPassword({
+<<<<<<< HEAD
     email: email.trim().toLowerCase(),
+=======
+    email,
+>>>>>>> origin/main
     password,
   });
 
@@ -128,6 +165,7 @@ export async function signIn(email: string, password: string) {
 }
 
 export async function signOut() {
+<<<<<<< HEAD
   const { error } = await supabase.auth.signOut();
 
   if (!error) {
@@ -136,3 +174,11 @@ export async function signOut() {
 
   return { error };
 }
+=======
+  setAuth(null);
+
+  const { error } = await supabase.auth.signOut();
+
+  return { error };
+}
+>>>>>>> origin/main

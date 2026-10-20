@@ -1,9 +1,18 @@
+<<<<<<< HEAD
 import { Ionicons } from "@expo/vector-icons";
+=======
+import Ionicons from "@expo/vector-icons/Ionicons";
+>>>>>>> origin/main
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+<<<<<<< HEAD
+=======
+  KeyboardAvoidingView,
+  Platform,
+>>>>>>> origin/main
   Pressable,
   ScrollView,
   StyleSheet,
@@ -15,6 +24,7 @@ import {
 import AppButton from "@/components/AppButton";
 import { COLORS } from "@/constants/colors";
 import { signOut, useAuth } from "@/lib/auth";
+<<<<<<< HEAD
 import {
   getMyTeacherVerificationRequest,
   getProfile,
@@ -23,6 +33,9 @@ import {
   type Profile,
   type TeacherVerificationRequest,
 } from "@/lib/profiles";
+=======
+import { getProfile, updateProfile, type Profile } from "@/lib/profiles";
+>>>>>>> origin/main
 
 export default function ProfileScreen() {
   const { user } = useAuth();
@@ -35,6 +48,7 @@ export default function ProfileScreen() {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
 
+<<<<<<< HEAD
   const [verificationRequest, setVerificationRequest] =
     useState<TeacherVerificationRequest | null>(null);
   const [teacherDetails, setTeacherDetails] = useState("");
@@ -45,6 +59,11 @@ export default function ProfileScreen() {
     if (!user) {
       setProfile(null);
       setVerificationRequest(null);
+=======
+  const loadProfile = useCallback(async () => {
+    if (!user) {
+      setProfile(null);
+>>>>>>> origin/main
       setFetchingProfile(false);
       return;
     }
@@ -52,6 +71,7 @@ export default function ProfileScreen() {
     setFetchingProfile(true);
 
     try {
+<<<<<<< HEAD
       const currentProfile = await getProfile(user.id);
 
       setProfile(currentProfile);
@@ -77,6 +97,14 @@ export default function ProfileScreen() {
       Alert.alert("Unable to load profile", "Please try again.");
     } finally {
       setLoadingVerification(false);
+=======
+      const p = await getProfile(user.id);
+      setProfile(p);
+      setDraftName(p?.full_name ?? "");
+    } catch {
+      Alert.alert("Error", "Unable to load your profile. Please try again.");
+    } finally {
+>>>>>>> origin/main
       setFetchingProfile(false);
     }
   }, [user]);
@@ -109,6 +137,7 @@ export default function ProfileScreen() {
         return;
       }
 
+<<<<<<< HEAD
       setProfile((previous) =>
         previous ? { ...previous, full_name: trimmedName } : previous,
       );
@@ -116,6 +145,11 @@ export default function ProfileScreen() {
       setEditing(false);
 
       Alert.alert("Profile updated", "Your name has been saved.");
+=======
+      setProfile((prev) => (prev ? { ...prev, full_name: trimmedName } : prev));
+      setDraftName(trimmedName);
+      setEditing(false);
+>>>>>>> origin/main
     } catch {
       Alert.alert("Error", "Something went wrong while saving your name.");
     } finally {
@@ -128,6 +162,7 @@ export default function ProfileScreen() {
     setEditing(false);
   };
 
+<<<<<<< HEAD
   const handleSubmitVerification = async () => {
     if (!user) {
       Alert.alert("Sign in required", "Please sign in before continuing.");
@@ -224,6 +259,8 @@ export default function ProfileScreen() {
     }
   };
 
+=======
+>>>>>>> origin/main
   const handleSignOut = async () => {
     setLoading(true);
 
@@ -234,12 +271,17 @@ export default function ProfileScreen() {
       const message =
         err instanceof Error ? err.message : "Failed to sign out.";
 
+<<<<<<< HEAD
       Alert.alert("Sign-out failed", message);
+=======
+      Alert.alert("Sign Out Failed", message);
+>>>>>>> origin/main
     } finally {
       setLoading(false);
     }
   };
 
+<<<<<<< HEAD
   const roleLabel =
     profile?.role === "admin"
       ? "Administrator"
@@ -251,10 +293,25 @@ export default function ProfileScreen() {
     .trim()
     .split(/\s+/)
     .filter(Boolean)
+=======
+  const role = profile?.role ?? "student";
+
+  const roleLabel =
+    role === "admin"
+      ? "Administrator"
+      : role === "teacher"
+        ? "Teacher"
+        : "Student";
+
+  const initials = (profile?.full_name || user?.email || "U")
+    .trim()
+    .split(/\s+/)
+>>>>>>> origin/main
     .slice(0, 2)
     .map((part) => part.charAt(0).toUpperCase())
     .join("");
 
+<<<<<<< HEAD
   const verificationStatus = verificationRequest?.status;
 
   const verificationColor =
@@ -348,11 +405,78 @@ export default function ProfileScreen() {
             <View style={styles.sectionIcon}>
               <Ionicons
                 name="person-circle-outline"
+=======
+  return (
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.pageHeader}>
+          <Text style={styles.pageTitle}>My Profile</Text>
+          <Text style={styles.pageSubtitle}>
+            Manage your account and personal information.
+          </Text>
+        </View>
+
+        <View style={styles.profileCard}>
+          <View style={styles.avatar}>
+            {fetchingProfile ? (
+              <ActivityIndicator color={COLORS.primary} size="large" />
+            ) : (
+              <Text style={styles.avatarText}>{initials || "U"}</Text>
+            )}
+          </View>
+
+          <Text style={styles.profileName}>
+            {fetchingProfile
+              ? "Loading profile..."
+              : profile?.full_name || "Welcome to QR-ATT"}
+          </Text>
+
+          <Text style={styles.profileEmail}>
+            {user?.email || "No email available"}
+          </Text>
+
+          <View style={styles.roleBadge}>
+            <Ionicons
+              name={
+                role === "admin"
+                  ? "shield-checkmark"
+                  : role === "teacher"
+                    ? "school"
+                    : "person"
+              }
+              size={15}
+              color={COLORS.primary}
+            />
+            <Text style={styles.roleBadgeText}>{roleLabel}</Text>
+          </View>
+        </View>
+
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Personal Information</Text>
+          <Text style={styles.sectionDescription}>
+            Your account details registered in QR-ATT.
+          </Text>
+        </View>
+
+        <View style={styles.infoCard}>
+          <View style={styles.infoRow}>
+            <View style={styles.infoIcon}>
+              <Ionicons
+                name="person-outline"
+>>>>>>> origin/main
                 size={21}
                 color={COLORS.primary}
               />
             </View>
 
+<<<<<<< HEAD
             <View style={styles.sectionHeadingText}>
               <Text style={styles.sectionTitle}>Personal information</Text>
               <Text style={styles.sectionSubtitle}>
@@ -366,17 +490,28 @@ export default function ProfileScreen() {
 
             {editing ? (
               <>
+=======
+            <View style={styles.infoContent}>
+              <Text style={styles.infoLabel}>Full Name</Text>
+
+              {editing ? (
+>>>>>>> origin/main
                 <TextInput
                   value={draftName}
                   onChangeText={setDraftName}
                   placeholder="Enter your full name"
+<<<<<<< HEAD
                   placeholderTextColor={COLORS.textSecondary}
+=======
+                  placeholderTextColor={COLORS.textMuted}
+>>>>>>> origin/main
                   style={styles.nameInput}
                   autoCapitalize="words"
                   autoCorrect={false}
                   editable={!saving}
                   returnKeyType="done"
                   onSubmitEditing={handleSaveName}
+<<<<<<< HEAD
                 />
 
                 <View style={styles.editActions}>
@@ -670,16 +805,142 @@ export default function ProfileScreen() {
               <Text style={styles.noteText}>
                 Your account is used to access school event attendance features.
                 Keep your sign-in details private.
+=======
+                  accessibilityLabel="Full name"
+                />
+              ) : (
+                <Text style={styles.infoValue}>
+                  {profile?.full_name || "Not provided"}
+                </Text>
+              )}
+            </View>
+
+            {!editing && (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Edit full name"
+                onPress={() => {
+                  setDraftName(profile?.full_name ?? "");
+                  setEditing(true);
+                }}
+                style={({ pressed }) => [
+                  styles.editButton,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Ionicons
+                  name="create-outline"
+                  size={19}
+                  color={COLORS.primary}
+                />
+              </Pressable>
+            )}
+          </View>
+
+          {editing && (
+            <View style={styles.editActions}>
+              <Pressable
+                onPress={handleCancelEdit}
+                disabled={saving}
+                style={({ pressed }) => [
+                  styles.cancelButton,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </Pressable>
+
+              <Pressable
+                onPress={handleSaveName}
+                disabled={saving}
+                style={({ pressed }) => [
+                  styles.saveButton,
+                  pressed && styles.pressed,
+                  saving && styles.disabledButton,
+                ]}
+              >
+                {saving ? (
+                  <ActivityIndicator
+                    color={COLORS.textOnPrimary}
+                    size="small"
+                  />
+                ) : (
+                  <>
+                    <Ionicons
+                      name="checkmark"
+                      size={17}
+                      color={COLORS.textOnPrimary}
+                    />
+                    <Text style={styles.saveButtonText}>Save Changes</Text>
+                  </>
+                )}
+              </Pressable>
+            </View>
+          )}
+
+          <View style={styles.separator} />
+
+          <View style={styles.infoRow}>
+            <View style={styles.infoIcon}>
+              <Ionicons name="mail-outline" size={21} color={COLORS.primary} />
+            </View>
+
+            <View style={styles.infoContent}>
+              <Text style={styles.infoLabel}>Email Address</Text>
+              <Text style={styles.infoValue}>
+                {user?.email || "Not available"}
+>>>>>>> origin/main
               </Text>
             </View>
           </View>
 
+<<<<<<< HEAD
           <View style={styles.signOutSection}>
             <Text style={styles.signOutHeading}>Leaving already?</Text>
             <Text style={styles.signOutDescription}>
               You can sign back in whenever you need Petal Pass.
             </Text>
 
+=======
+          <View style={styles.separator} />
+
+          <View style={styles.infoRow}>
+            <View style={styles.infoIcon}>
+              <Ionicons
+                name="shield-checkmark-outline"
+                size={21}
+                color={COLORS.primary}
+              />
+            </View>
+
+            <View style={styles.infoContent}>
+              <Text style={styles.infoLabel}>Account Role</Text>
+              <Text style={styles.infoValue}>{roleLabel}</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.accountNote}>
+          <Ionicons
+            name="information-circle-outline"
+            size={21}
+            color={COLORS.primary}
+          />
+          <Text style={styles.accountNoteText}>
+            Your account email and role are managed by the QR-ATT system.
+            Contact your administrator if you need assistance with your account
+            access.
+          </Text>
+        </View>
+
+        <View style={styles.signOutSection}>
+          <Text style={styles.sectionTitle}>Account Actions</Text>
+          <Text style={styles.sectionDescription}>
+            Sign out when you are finished using the app.
+          </Text>
+
+          <View style={styles.signOutButton}>
+>>>>>>> origin/main
             <AppButton
               title={loading ? "Signing Out..." : "Sign Out"}
               icon="log-out-outline"
@@ -687,6 +948,7 @@ export default function ProfileScreen() {
               disabled={loading}
             />
           </View>
+<<<<<<< HEAD
 
           <View style={styles.footer}>
             <Ionicons name="flower-outline" size={15} color={COLORS.primary} />
@@ -696,6 +958,18 @@ export default function ProfileScreen() {
         </>
       )}
     </ScrollView>
+=======
+        </View>
+
+        <View style={styles.footer}>
+          <Ionicons name="checkmark-circle" size={15} color={COLORS.success} />
+          <Text style={styles.footerText}>
+            QR-ATT · Smart School Event Attendance
+          </Text>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
+>>>>>>> origin/main
   );
 }
 
@@ -704,6 +978,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
+<<<<<<< HEAD
   content: {
     paddingHorizontal: 20,
     paddingTop: 20,
@@ -732,10 +1007,38 @@ const styles = StyleSheet.create({
   },
   loadingCard: {
     minHeight: 230,
+=======
+
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 30,
+  },
+
+  pageHeader: {
+    marginBottom: 22,
+  },
+
+  pageTitle: {
+    fontSize: 26,
+    fontWeight: "800",
+    color: COLORS.textPrimary,
+    marginBottom: 6,
+  },
+
+  pageSubtitle: {
+    fontSize: 13,
+    lineHeight: 20,
+    color: COLORS.textSecondary,
+  },
+
+  profileCard: {
+>>>>>>> origin/main
     backgroundColor: COLORS.card,
     borderRadius: 24,
     borderWidth: 1,
     borderColor: COLORS.border,
+<<<<<<< HEAD
     alignItems: "center",
     justifyContent: "center",
     gap: 12,
@@ -918,10 +1221,152 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.textPrimary,
   },
+=======
+    paddingVertical: 26,
+    paddingHorizontal: 20,
+    alignItems: "center",
+    marginBottom: 28,
+  },
+
+  avatar: {
+    width: 88,
+    height: 88,
+    borderRadius: 30,
+    backgroundColor: COLORS.primarySoft,
+    borderWidth: 3,
+    borderColor: COLORS.surface,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+  },
+
+  avatarText: {
+    fontSize: 30,
+    fontWeight: "800",
+    color: COLORS.primary,
+  },
+
+  profileName: {
+    fontSize: 21,
+    fontWeight: "800",
+    color: COLORS.textPrimary,
+    textAlign: "center",
+    marginBottom: 7,
+  },
+
+  profileEmail: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    textAlign: "center",
+    marginBottom: 15,
+  },
+
+  roleBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    backgroundColor: COLORS.primarySoft,
+    borderColor: COLORS.border,
+    borderWidth: 1,
+    borderRadius: 30,
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+  },
+
+  roleBadgeText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: COLORS.primary,
+  },
+
+  sectionHeader: {
+    marginBottom: 14,
+  },
+
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: COLORS.textPrimary,
+    marginBottom: 5,
+  },
+
+  sectionDescription: {
+    fontSize: 12,
+    lineHeight: 18,
+    color: COLORS.textSecondary,
+  },
+
+  infoCard: {
+    backgroundColor: COLORS.card,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    marginBottom: 18,
+  },
+
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 15,
+    gap: 12,
+  },
+
+  infoIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: COLORS.primarySoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  infoContent: {
+    flex: 1,
+    minWidth: 0,
+  },
+
+  infoLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: COLORS.textSecondary,
+    marginBottom: 5,
+  },
+
+  infoValue: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: COLORS.textPrimary,
+  },
+
+  nameInput: {
+    minHeight: 40,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 10,
+    backgroundColor: COLORS.background,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    color: COLORS.textPrimary,
+    fontSize: 14,
+  },
+
+  editButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: COLORS.primarySoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+>>>>>>> origin/main
   editActions: {
     flexDirection: "row",
     justifyContent: "flex-end",
     alignItems: "center",
+<<<<<<< HEAD
     gap: 9,
     marginTop: 12,
   },
@@ -1158,3 +1603,95 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
   },
 });
+=======
+    gap: 10,
+    paddingBottom: 14,
+  },
+
+  cancelButton: {
+    minHeight: 42,
+    justifyContent: "center",
+    paddingHorizontal: 15,
+    borderRadius: 12,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+
+  cancelButtonText: {
+    color: COLORS.textSecondary,
+    fontWeight: "700",
+    fontSize: 12,
+  },
+
+  saveButton: {
+    minHeight: 42,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 5,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: COLORS.primary,
+  },
+
+  saveButtonText: {
+    color: COLORS.textOnPrimary,
+    fontWeight: "700",
+    fontSize: 12,
+  },
+
+  disabledButton: {
+    opacity: 0.65,
+  },
+
+  pressed: {
+    opacity: 0.78,
+  },
+
+  separator: {
+    height: 1,
+    backgroundColor: COLORS.border,
+  },
+
+  accountNote: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    backgroundColor: COLORS.primarySoft,
+    borderRadius: 16,
+    padding: 15,
+    marginBottom: 28,
+  },
+
+  accountNoteText: {
+    flex: 1,
+    color: COLORS.textSecondary,
+    fontSize: 12,
+    lineHeight: 19,
+  },
+
+  signOutSection: {
+    marginBottom: 8,
+  },
+
+  signOutButton: {
+    marginTop: 16,
+  },
+
+  footer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 20,
+  },
+
+  footerText: {
+    color: COLORS.textMuted,
+    fontSize: 11,
+    fontWeight: "500",
+    textAlign: "center",
+  },
+});
+>>>>>>> origin/main
