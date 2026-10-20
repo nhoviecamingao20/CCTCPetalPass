@@ -11,7 +11,6 @@ import {
   View,
 } from "react-native";
 
-import AppButton from "@/components/AppButton";
 import { COLORS } from "@/constants/colors";
 import { supabase } from "@/lib/supabase";
 
@@ -24,6 +23,120 @@ type SchoolEvent = {
 };
 
 type EventSchedule = "Upcoming" | "Ongoing" | "Schedule TBA";
+type UserRole = "student" | "teacher" | "admin";
+
+type DashboardAction = {
+  title: string;
+  description: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  route:
+    | "/scan"
+    | "/history"
+    | "/profile"
+    | "/(tabs)/teacher"
+    | "/(tabs)/admin";
+  primary?: boolean;
+};
+
+const ROLE_CONTENT: Record<
+  UserRole,
+  {
+    eyebrow: string;
+    title: string;
+    accent: string;
+    description: string;
+    icon: keyof typeof Ionicons.glyphMap;
+    actions: DashboardAction[];
+  }
+> = {
+  student: {
+    eyebrow: "STUDENT DASHBOARD",
+    title: "Make every",
+    accent: "moment count.",
+    description:
+      "Check in to campus activities, keep track of your attendance, and stay informed about school events.",
+    icon: "school-outline",
+    actions: [
+      {
+        title: "Scan Event QR Code",
+        description: "Record your attendance at school activities.",
+        icon: "qr-code-outline",
+        route: "/scan",
+        primary: true,
+      },
+      {
+        title: "My Attendance",
+        description: "Review your recorded event attendance.",
+        icon: "time-outline",
+        route: "/history",
+      },
+      {
+        title: "My Profile",
+        description: "View your account and student information.",
+        icon: "person-circle-outline",
+        route: "/profile",
+      },
+    ],
+  },
+  teacher: {
+    eyebrow: "TEACHER DASHBOARD",
+    title: "Guide every",
+    accent: "school event.",
+    description:
+      "Access your teacher workspace to manage assigned activities and support accurate attendance monitoring.",
+    icon: "clipboard-outline",
+    actions: [
+      {
+        title: "Teacher Workspace",
+        description: "Open your teacher dashboard and event tools.",
+        icon: "easel-outline",
+        route: "/(tabs)/teacher",
+        primary: true,
+      },
+      {
+        title: "Event Attendance",
+        description: "Access attendance-related tools in your workspace.",
+        icon: "people-outline",
+        route: "/(tabs)/teacher",
+      },
+      {
+        title: "My Profile",
+        description: "View your account information.",
+        icon: "person-circle-outline",
+        route: "/profile",
+      },
+    ],
+  },
+  admin: {
+    eyebrow: "ADMINISTRATOR DASHBOARD",
+    title: "Keep campus",
+    accent: "running smoothly.",
+    description:
+      "Manage user accounts, review teacher verification requests, organize events, and oversee attendance records.",
+    icon: "shield-checkmark-outline",
+    actions: [
+      {
+        title: "Administration",
+        description: "Manage users, roles, and student information.",
+        icon: "settings-outline",
+        route: "/(tabs)/admin",
+        primary: true,
+      },
+      {
+        title: "Teacher Verification",
+        description: "Review verification requests in the admin workspace.",
+        icon: "person-add-outline",
+        route: "/(tabs)/admin",
+      },
+      {
+        title: "Events & Attendance",
+        description: "Manage school events and monitor attendance records.",
+        icon: "calendar-outline",
+        route: "/(tabs)/admin",
+      },
+    ],
+  },
+};
 
 function getEventSchedule(event: SchoolEvent): EventSchedule {
   const now = Date.now();
@@ -76,6 +189,58 @@ export default function Index() {
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [eventError, setEventError] = useState<string | null>(null);
 
+  const [role, setRole] = useState<UserRole>("student");
+  const [loadingRole, setLoadingRole] = useState(true);
+  const [roleError, setRoleError] = useState(false);
+
+  const loadRole = useCallback(async () => {
+    setLoadingRole(true);
+    setRoleError(false);
+
+    try {
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError) {
+        throw authError;
+      }
+
+      if (!user) {
+        setRole("student");
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      const fetchedRole = data?.role;
+
+      if (
+        fetchedRole === "student" ||
+        fetchedRole === "teacher" ||
+        fetchedRole === "admin"
+      ) {
+        setRole(fetchedRole);
+      } else {
+        setRole("student");
+      }
+    } catch (error) {
+      console.error("Could not load user role:", error);
+      setRoleError(true);
+    } finally {
+      setLoadingRole(false);
+    }
+  }, []);
+
   const loadEvents = useCallback(async () => {
     setLoadingEvents(true);
     setEventError(null);
@@ -105,8 +270,9 @@ export default function Index() {
 
   useFocusEffect(
     useCallback(() => {
+      void loadRole();
       void loadEvents();
-    }, [loadEvents]),
+    }, [loadRole, loadEvents]),
   );
 
   const now = Date.now();
@@ -119,12 +285,15 @@ export default function Index() {
     return !Number.isFinite(end) || end >= now;
   });
 
+  const dashboard = ROLE_CONTENT[role];
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
+        {/* Brand header */}
         <View style={styles.brandHeader}>
           <View style={styles.brandIcon}>
             <Ionicons name="flower-outline" size={27} color={COLORS.primary} />
@@ -142,46 +311,68 @@ export default function Index() {
           </View>
         </View>
 
+        {/* Role-based welcome panel */}
         <View style={styles.heroCard}>
           <View style={styles.flowerTopRight}>
             <Ionicons name="flower-outline" size={96} color={COLORS.border} />
           </View>
 
           <View style={styles.heroBadge}>
-            <Ionicons name="qr-code-outline" size={27} color={COLORS.primary} />
+            <Ionicons name={dashboard.icon} size={27} color={COLORS.primary} />
             <View style={styles.badgeFlower}>
               <Ionicons name="flower" size={14} color={COLORS.primary} />
             </View>
           </View>
 
-          <Text style={styles.eyebrow}>YOUR CAMPUS, CONNECTED</Text>
-
-          <Text style={styles.mainTitle}>
-            Your Pass to{"\n"}
-            <Text style={styles.titleAccent}>Every Event.</Text>
+          <Text style={styles.eyebrow}>
+            {loadingRole ? "LOADING YOUR WORKSPACE" : dashboard.eyebrow}
           </Text>
 
-          <Text style={styles.subtitle}>
-            Check in at school programs, seminars, and campus activities with a
-            quick QR scan. Your attendance records are always within reach.
-          </Text>
+          {roleError ? (
+            <View style={styles.roleErrorCard}>
+              <Ionicons
+                name="alert-circle-outline"
+                size={20}
+                color={COLORS.danger}
+              />
+              <View style={styles.roleErrorContent}>
+                <Text style={styles.roleErrorTitle}>
+                  Unable to verify your role
+                </Text>
+                <Text style={styles.roleErrorText}>
+                  Your dashboard may show the default student view. Try
+                  reloading your account information.
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => void loadRole()}
+                  style={styles.retryButton}
+                >
+                  <Ionicons
+                    name="refresh-outline"
+                    size={16}
+                    color={COLORS.primary}
+                  />
+                  <Text style={styles.retryText}>Try again</Text>
+                </Pressable>
+              </View>
+            </View>
+          ) : (
+            <>
+              <Text style={styles.mainTitle}>
+                {dashboard.title}
+                {"\n"}
+                <Text style={styles.titleAccent}>{dashboard.accent}</Text>
+              </Text>
+
+              <Text style={styles.subtitle}>{dashboard.description}</Text>
+            </>
+          )}
 
           <View style={styles.decorativeDivider}>
             <View style={styles.dividerLine} />
             <Ionicons name="flower" size={15} color={COLORS.primary} />
             <View style={styles.dividerLine} />
-          </View>
-
-          <View style={styles.featureRow}>
-            <View style={styles.featureIcon}>
-              <Ionicons name="scan-outline" size={20} color={COLORS.primary} />
-            </View>
-            <View style={styles.featureTextContainer}>
-              <Text style={styles.featureTitle}>Quick event check-in</Text>
-              <Text style={styles.featureDescription}>
-                Scan the event QR code to record your attendance.
-              </Text>
-            </View>
           </View>
 
           <View style={styles.featureRow}>
@@ -193,9 +384,9 @@ export default function Index() {
               />
             </View>
             <View style={styles.featureTextContainer}>
-              <Text style={styles.featureTitle}>Your attendance history</Text>
+              <Text style={styles.featureTitle}>School events</Text>
               <Text style={styles.featureDescription}>
-                Review your recorded school event participation.
+                Stay informed about upcoming campus activities and schedules.
               </Text>
             </View>
           </View>
@@ -203,18 +394,133 @@ export default function Index() {
           <View style={styles.featureRow}>
             <View style={styles.featureIcon}>
               <Ionicons
-                name="shield-checkmark-outline"
+                name={
+                  role === "student"
+                    ? "qr-code-outline"
+                    : role === "teacher"
+                      ? "clipboard-outline"
+                      : "shield-checkmark-outline"
+                }
                 size={20}
                 color={COLORS.primary}
               />
             </View>
             <View style={styles.featureTextContainer}>
-              <Text style={styles.featureTitle}>One school account</Text>
+              <Text style={styles.featureTitle}>
+                {role === "student"
+                  ? "Easy attendance check-in"
+                  : role === "teacher"
+                    ? "Event coordination"
+                    : "Centralized administration"}
+              </Text>
               <Text style={styles.featureDescription}>
-                Access your attendance features after signing in.
+                {role === "student"
+                  ? "Scan event QR codes and review your attendance."
+                  : role === "teacher"
+                    ? "Access teacher tools for your event responsibilities."
+                    : "Access user management, verification, events, and attendance."}
               </Text>
             </View>
           </View>
+        </View>
+
+        {/* Role-based responsibilities and shortcuts */}
+        <View style={styles.actionsSection}>
+          <View style={styles.sectionHeadingRow}>
+            <View style={styles.sectionHeadingText}>
+              <Text style={styles.sectionTitle}>
+                {role === "student"
+                  ? "Student Services"
+                  : role === "teacher"
+                    ? "Teacher Tools"
+                    : "Admin Controls"}
+              </Text>
+              <Text style={styles.sectionSubtitle}>
+                {role === "student"
+                  ? "Manage your attendance and student account."
+                  : role === "teacher"
+                    ? "Access tools for your teaching responsibilities."
+                    : "Manage and monitor school attendance operations."}
+              </Text>
+            </View>
+
+            <View style={styles.eventHeadingIcon}>
+              <Ionicons
+                name={dashboard.icon}
+                size={23}
+                color={COLORS.primary}
+              />
+            </View>
+          </View>
+
+          {loadingRole ? (
+            <View style={styles.eventsStateCard}>
+              <ActivityIndicator size="small" color={COLORS.primary} />
+              <Text style={styles.stateText}>
+                Loading role-specific features...
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.actionList}>
+              {dashboard.actions.map((action, index) => (
+                <Pressable
+                  key={`${role}-${action.title}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={action.title}
+                  onPress={() => router.push(action.route as never)}
+                  style={({ pressed }) => [
+                    styles.roleActionCard,
+                    action.primary && styles.roleActionCardPrimary,
+                    pressed && styles.roleActionPressed,
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.roleActionIcon,
+                      action.primary && styles.roleActionIconPrimary,
+                    ]}
+                  >
+                    <Ionicons
+                      name={action.icon}
+                      size={23}
+                      color={
+                        action.primary ? COLORS.textOnPrimary : COLORS.primary
+                      }
+                    />
+                  </View>
+
+                  <View style={styles.roleActionText}>
+                    <Text
+                      style={[
+                        styles.roleActionTitle,
+                        action.primary && styles.roleActionTitlePrimary,
+                      ]}
+                    >
+                      {action.title}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.roleActionDescription,
+                        action.primary && styles.roleActionDescriptionPrimary,
+                      ]}
+                    >
+                      {action.description}
+                    </Text>
+                  </View>
+
+                  <Ionicons
+                    name="chevron-forward"
+                    size={20}
+                    color={
+                      action.primary
+                        ? COLORS.textOnPrimary
+                        : COLORS.textSecondary
+                    }
+                  />
+                </Pressable>
+              ))}
+            </View>
+          )}
         </View>
 
         {/* School events loaded from Supabase */}
@@ -339,25 +645,27 @@ export default function Index() {
                       </Text>
                     </View>
 
-                    <Pressable
-                      accessibilityRole="button"
-                      onPress={() => router.push("/scan")}
-                      style={styles.scanEventButton}
-                    >
-                      <Ionicons
-                        name="qr-code-outline"
-                        size={17}
-                        color={COLORS.textOnPrimary}
-                      />
-                      <Text style={styles.scanEventButtonText}>
-                        Scan Event QR
-                      </Text>
-                      <Ionicons
-                        name="arrow-forward"
-                        size={16}
-                        color={COLORS.textOnPrimary}
-                      />
-                    </Pressable>
+                    {role === "student" && (
+                      <Pressable
+                        accessibilityRole="button"
+                        onPress={() => router.push("/scan")}
+                        style={styles.scanEventButton}
+                      >
+                        <Ionicons
+                          name="qr-code-outline"
+                          size={17}
+                          color={COLORS.textOnPrimary}
+                        />
+                        <Text style={styles.scanEventButtonText}>
+                          Scan Event QR
+                        </Text>
+                        <Ionicons
+                          name="arrow-forward"
+                          size={16}
+                          color={COLORS.textOnPrimary}
+                        />
+                      </Pressable>
+                    )}
                   </View>
                 );
               })}
@@ -374,39 +682,7 @@ export default function Index() {
           </Pressable>
         </View>
 
-        <View style={styles.actionsSection}>
-          <View style={styles.sectionHeadingRow}>
-            <View style={styles.sectionHeadingText}>
-              <Text style={styles.sectionTitle}>Ready to check in?</Text>
-              <Text style={styles.sectionSubtitle}>
-                Choose your next destination.
-              </Text>
-            </View>
-            <Ionicons name="flower-outline" size={28} color={COLORS.border} />
-          </View>
-
-          <View style={styles.buttonContainer}>
-            <AppButton
-              theme="primary"
-              title="Scan Event QR Code"
-              icon="qr-code-outline"
-              onPress={() => router.push("/scan")}
-            />
-
-            <AppButton
-              title="Attendance History"
-              icon="time-outline"
-              onPress={() => router.push("/history")}
-            />
-
-            <AppButton
-              title="My Profile"
-              icon="person-outline"
-              onPress={() => router.push("/profile")}
-            />
-          </View>
-        </View>
-
+        {/* Footer */}
         <View style={styles.footer}>
           <View style={styles.footerDivider} />
           <Ionicons name="flower-outline" size={16} color={COLORS.primary} />
@@ -581,7 +857,31 @@ const styles = StyleSheet.create({
     lineHeight: 17,
     color: COLORS.textSecondary,
   },
-  eventsSection: {
+  roleErrorCard: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    padding: 12,
+    borderRadius: 14,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  roleErrorContent: {
+    flex: 1,
+    gap: 6,
+  },
+  roleErrorTitle: {
+    fontSize: 13,
+    fontWeight: "900",
+    color: COLORS.textPrimary,
+  },
+  roleErrorText: {
+    fontSize: 11,
+    lineHeight: 17,
+    color: COLORS.textSecondary,
+  },
+  actionsSection: {
     gap: 13,
     marginBottom: 26,
   },
@@ -589,6 +889,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    gap: 12,
     marginBottom: 3,
   },
   sectionHeadingText: {
@@ -602,6 +903,7 @@ const styles = StyleSheet.create({
   },
   sectionSubtitle: {
     fontSize: 12,
+    lineHeight: 18,
     color: COLORS.textSecondary,
   },
   eventHeadingIcon: {
@@ -613,6 +915,71 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 1,
     borderColor: COLORS.border,
+  },
+  actionList: {
+    gap: 11,
+  },
+  roleActionCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 15,
+    backgroundColor: COLORS.card,
+    borderRadius: 19,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.035,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  roleActionCardPrimary: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  roleActionPressed: {
+    opacity: 0.78,
+    transform: [{ scale: 0.99 }],
+  },
+  roleActionIcon: {
+    width: 45,
+    height: 45,
+    borderRadius: 15,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  roleActionIconPrimary: {
+    backgroundColor: "rgba(255,255,255,0.18)",
+    borderColor: "rgba(255,255,255,0.35)",
+  },
+  roleActionText: {
+    flex: 1,
+    gap: 5,
+  },
+  roleActionTitle: {
+    fontSize: 13,
+    fontWeight: "900",
+    color: COLORS.textPrimary,
+  },
+  roleActionTitlePrimary: {
+    color: COLORS.textOnPrimary,
+  },
+  roleActionDescription: {
+    fontSize: 11,
+    lineHeight: 17,
+    color: COLORS.textSecondary,
+  },
+  roleActionDescriptionPrimary: {
+    color: COLORS.textOnPrimary,
+    opacity: 0.92,
+  },
+  eventsSection: {
+    gap: 13,
+    marginBottom: 26,
   },
   eventsStateCard: {
     alignItems: "center",
@@ -762,13 +1129,6 @@ const styles = StyleSheet.create({
     gap: 7,
     paddingVertical: 7,
     paddingHorizontal: 12,
-  },
-  actionsSection: {
-    gap: 12,
-  },
-  buttonContainer: {
-    gap: 12,
-    width: "100%",
   },
   footer: {
     flexDirection: "row",

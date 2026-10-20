@@ -5,6 +5,7 @@ import {
   ActivityIndicator,
   Keyboard,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -18,7 +19,40 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import AppButton from "@/components/AppButton";
 import { COLORS } from "@/constants/colors";
-import { signUp } from "@/lib/auth";
+import {
+  signUp,
+  type StudentDepartment,
+  type StudentYearLevel,
+} from "@/lib/auth";
+
+const DEPARTMENTS: {
+  value: StudentDepartment;
+  name: string;
+  icon: keyof typeof Ionicons.glyphMap;
+}[] = [
+  {
+    value: "BSIT",
+    name: "Bachelor of Science in Information Technology",
+    icon: "laptop-outline",
+  },
+  {
+    value: "BSHM",
+    name: "Bachelor of Science in Hospitality Management",
+    icon: "restaurant-outline",
+  },
+  {
+    value: "BSEntrep",
+    name: "Bachelor of Science in Entrepreneurship",
+    icon: "briefcase-outline",
+  },
+];
+
+const YEAR_LEVELS: StudentYearLevel[] = [
+  "1st Year",
+  "2nd Year",
+  "3rd Year",
+  "4th Year",
+];
 
 export default function RegisterScreen() {
   const insets = useSafeAreaInsets();
@@ -27,14 +61,26 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [role, setRole] = useState<"student" | "teacher">("student");
+
+  const [department, setDepartment] = useState<StudentDepartment>("BSIT");
+  const [yearLevel, setYearLevel] = useState<StudentYearLevel>("1st Year");
+
+  const [showDepartmentModal, setShowDepartmentModal] = useState(false);
+  const [showYearModal, setShowYearModal] = useState(false);
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const selectedDepartment = DEPARTMENTS.find(
+    (item) => item.value === department,
+  )!;
+
   const handleRegister = async () => {
+    if (loading) return;
+
     setError(null);
 
     if (!fullName.trim() || !email.trim() || !password || !confirmPassword) {
@@ -52,27 +98,48 @@ export default function RegisterScreen() {
       return;
     }
 
+    const normalizedEmail = email.trim().toLowerCase();
+
     setLoading(true);
+    Keyboard.dismiss();
 
     try {
-      const { data, error: authError } = await signUp(email.trim(), password, {
-        full_name: fullName.trim(),
-        role,
-      });
+      const { data, error: authError } = await signUp(
+        normalizedEmail,
+        password,
+        {
+          full_name: fullName.trim(),
+          role: "student",
+          department,
+          year_level: yearLevel,
+        },
+      );
 
       if (authError) {
         setError(authError.message);
-      } else if (data.session) {
+        return;
+      }
+
+      if (data.session) {
         router.replace("/(tabs)");
       } else {
         setSuccess(true);
       }
-    } catch {
-      setError("Something went wrong. Please try again.");
+    } catch (registrationError) {
+      console.error("Registration failed:", registrationError);
+
+      setError(
+        registrationError instanceof Error
+          ? registrationError.message
+          : "Something went wrong. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
   };
+
+  const closeDepartmentModal = () => setShowDepartmentModal(false);
+  const closeYearModal = () => setShowYearModal(false);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -97,6 +164,7 @@ export default function RegisterScreen() {
               </View>
 
               <Text style={styles.brandName}>CCTC Petal Pass</Text>
+
               <Text style={styles.brandSubtitle}>
                 CONSOLATRIX COLLEGE OF TOLEDO CITY
               </Text>
@@ -112,12 +180,24 @@ export default function RegisterScreen() {
                   />
                 </View>
 
-                <Text style={styles.successTitle}>You're almost there!</Text>
+                <Text style={styles.successTitle}>
+                  You&apos;re almost there!
+                </Text>
+
                 <Text style={styles.successText}>
                   Your registration was submitted for {email.trim()}. If email
                   confirmation is enabled, check your inbox and follow the
                   instructions before signing in.
                 </Text>
+
+                <View style={styles.registrationSummary}>
+                  <SummaryRow label="Department" value={department} />
+                  <SummaryRow label="Year Level" value={yearLevel} />
+                  <SummaryRow
+                    label="Block"
+                    value="Assigned during registration"
+                  />
+                </View>
 
                 <AppButton
                   theme="primary"
@@ -130,10 +210,12 @@ export default function RegisterScreen() {
               <>
                 <View style={styles.heading}>
                   <Text style={styles.eyebrow}>JOIN THE CAMPUS COMMUNITY</Text>
+
                   <Text style={styles.title}>Create Account</Text>
+
                   <Text style={styles.subtitle}>
-                    Set up your account to check in at school events and keep
-                    track of your attendance.
+                    Register your student account to check in at school events
+                    and keep track of your attendance.
                   </Text>
                 </View>
 
@@ -146,6 +228,7 @@ export default function RegisterScreen() {
                         color={COLORS.primary}
                       />
                     </View>
+
                     <View style={styles.formHeadingText}>
                       <Text style={styles.formTitle}>Your details</Text>
                       <Text style={styles.formSubtitle}>
@@ -155,12 +238,14 @@ export default function RegisterScreen() {
                   </View>
 
                   <Text style={styles.label}>FULL NAME</Text>
+
                   <View style={styles.inputContainer}>
                     <Ionicons
                       name="person-outline"
                       size={19}
                       color={COLORS.textSecondary}
                     />
+
                     <TextInput
                       style={styles.input}
                       value={fullName}
@@ -171,16 +256,19 @@ export default function RegisterScreen() {
                       autoCorrect={false}
                       editable={!loading}
                       returnKeyType="next"
+                      maxLength={120}
                     />
                   </View>
 
                   <Text style={styles.label}>SCHOOL EMAIL</Text>
+
                   <View style={styles.inputContainer}>
                     <Ionicons
                       name="mail-outline"
                       size={19}
                       color={COLORS.textSecondary}
                     />
+
                     <TextInput
                       style={styles.input}
                       value={email}
@@ -196,12 +284,14 @@ export default function RegisterScreen() {
                   </View>
 
                   <Text style={styles.label}>PASSWORD</Text>
+
                   <View style={styles.inputContainer}>
                     <Ionicons
                       name="lock-closed-outline"
                       size={19}
                       color={COLORS.textSecondary}
                     />
+
                     <TextInput
                       style={styles.input}
                       value={password}
@@ -210,11 +300,14 @@ export default function RegisterScreen() {
                       placeholderTextColor={COLORS.textSecondary}
                       secureTextEntry={!showPassword}
                       autoCapitalize="none"
+                      autoCorrect={false}
                       editable={!loading}
                       returnKeyType="next"
                     />
+
                     <Pressable
                       onPress={() => setShowPassword((value) => !value)}
+                      disabled={loading}
                       hitSlop={8}
                       accessibilityRole="button"
                       accessibilityLabel={
@@ -234,12 +327,14 @@ export default function RegisterScreen() {
                   </Text>
 
                   <Text style={styles.label}>CONFIRM PASSWORD</Text>
+
                   <View style={styles.inputContainer}>
                     <Ionicons
                       name="shield-checkmark-outline"
                       size={19}
                       color={COLORS.textSecondary}
                     />
+
                     <TextInput
                       style={styles.input}
                       value={confirmPassword}
@@ -248,12 +343,15 @@ export default function RegisterScreen() {
                       placeholderTextColor={COLORS.textSecondary}
                       secureTextEntry={!showConfirmPassword}
                       autoCapitalize="none"
+                      autoCorrect={false}
                       editable={!loading}
                       returnKeyType="done"
                       onSubmitEditing={handleRegister}
                     />
+
                     <Pressable
                       onPress={() => setShowConfirmPassword((value) => !value)}
+                      disabled={loading}
                       hitSlop={8}
                       accessibilityRole="button"
                       accessibilityLabel={
@@ -274,102 +372,102 @@ export default function RegisterScreen() {
                     </Pressable>
                   </View>
 
-                  <Text style={styles.label}>REGISTERING AS</Text>
-                  <View style={styles.roleRow}>
-                    <Pressable
-                      style={[
-                        styles.roleCard,
-                        role === "student" && styles.roleCardActive,
-                      ]}
-                      onPress={() => setRole("student")}
-                      disabled={loading}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected: role === "student" }}
-                    >
-                      <Ionicons
-                        name="person-outline"
-                        size={22}
-                        color={
-                          role === "student"
-                            ? COLORS.primary
-                            : COLORS.textSecondary
-                        }
-                      />
-                      <Text
-                        style={[
-                          styles.roleTitle,
-                          role === "student" && styles.roleTitleActive,
-                        ]}
-                      >
-                        Student
-                      </Text>
-                      <Text style={styles.roleDescription}>
-                        Attend campus events
-                      </Text>
-                      {role === "student" && (
-                        <Ionicons
-                          name="checkmark-circle"
-                          size={17}
-                          color={COLORS.primary}
-                          style={styles.roleCheck}
-                        />
-                      )}
-                    </Pressable>
+                  <Text style={styles.label}>DEPARTMENT</Text>
 
-                    <Pressable
-                      style={[
-                        styles.roleCard,
-                        role === "teacher" && styles.roleCardActive,
-                      ]}
-                      onPress={() => setRole("teacher")}
-                      disabled={loading}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected: role === "teacher" }}
-                    >
+                  <Pressable
+                    style={styles.selectorField}
+                    onPress={() => {
+                      Keyboard.dismiss();
+                      setShowDepartmentModal(true);
+                      setError(null);
+                    }}
+                    disabled={loading}
+                    accessibilityRole="button"
+                    accessibilityLabel="Choose department"
+                  >
+                    <View style={styles.selectorIcon}>
                       <Ionicons
                         name="school-outline"
-                        size={22}
-                        color={
-                          role === "teacher"
-                            ? COLORS.primary
-                            : COLORS.textSecondary
-                        }
-                      />
-                      <Text
-                        style={[
-                          styles.roleTitle,
-                          role === "teacher" && styles.roleTitleActive,
-                        ]}
-                      >
-                        Teacher
-                      </Text>
-                      <Text style={styles.roleDescription}>
-                        School staff account
-                      </Text>
-                      {role === "teacher" && (
-                        <Ionicons
-                          name="checkmark-circle"
-                          size={17}
-                          color={COLORS.primary}
-                          style={styles.roleCheck}
-                        />
-                      )}
-                    </Pressable>
-                  </View>
-
-                  {role === "teacher" && (
-                    <View style={styles.teacherNote}>
-                      <Ionicons
-                        name="information-circle-outline"
-                        size={19}
+                        size={21}
                         color={COLORS.primary}
                       />
-                      <Text style={styles.teacherNoteText}>
-                        Teacher access may require verification by your school
-                        administrator.
+                    </View>
+
+                    <View style={styles.selectorText}>
+                      <Text style={styles.selectorValue}>
+                        {selectedDepartment.value}
+                      </Text>
+                      <Text style={styles.selectorHint}>
+                        {selectedDepartment.name}
                       </Text>
                     </View>
-                  )}
+
+                    <Ionicons
+                      name="chevron-down"
+                      size={20}
+                      color={COLORS.primary}
+                    />
+                  </Pressable>
+
+                  <Text style={styles.label}>YEAR LEVEL</Text>
+
+                  <Text style={styles.selectionHint}>
+                    Select your current year level.
+                  </Text>
+
+                  <Pressable
+                    style={styles.selectorField}
+                    onPress={() => {
+                      Keyboard.dismiss();
+                      setShowYearModal(true);
+                      setError(null);
+                    }}
+                    disabled={loading}
+                    accessibilityRole="button"
+                    accessibilityLabel="Choose year level"
+                  >
+                    <View style={styles.selectorIcon}>
+                      <Ionicons
+                        name="calendar-outline"
+                        size={21}
+                        color={COLORS.primary}
+                      />
+                    </View>
+
+                    <View style={styles.selectorText}>
+                      <Text style={styles.selectorValue}>{yearLevel}</Text>
+                      <Text style={styles.selectorHint}>
+                        Tap to change your year level
+                      </Text>
+                    </View>
+
+                    <Ionicons
+                      name="chevron-down"
+                      size={20}
+                      color={COLORS.primary}
+                    />
+                  </Pressable>
+
+                  <View style={styles.blockInfo}>
+                    <View style={styles.blockInfoIcon}>
+                      <Ionicons
+                        name="shuffle-outline"
+                        size={21}
+                        color={COLORS.primary}
+                      />
+                    </View>
+
+                    <View style={styles.blockInfoContent}>
+                      <Text style={styles.blockInfoTitle}>
+                        Automatic block assignment
+                      </Text>
+
+                      <Text style={styles.blockInfoText}>
+                        Your block will be randomly assigned as A, B, or C
+                        during registration and saved to your student profile.
+                      </Text>
+                    </View>
+                  </View>
 
                   {error && (
                     <View style={styles.errorContainer}>
@@ -405,7 +503,7 @@ export default function RegisterScreen() {
                       color={COLORS.success}
                     />
                     <Text style={styles.securityText}>
-                      Your account details are handled through the school's
+                      Your student profile is saved through the school&apos;s
                       sign-in system.
                     </Text>
                   </View>
@@ -438,6 +536,241 @@ export default function RegisterScreen() {
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
+
+      {/* Department selection modal */}
+      <Modal
+        visible={showDepartmentModal}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+        onRequestClose={closeDepartmentModal}
+      >
+        <View style={styles.modalBackdrop}>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={closeDepartmentModal}
+            accessibilityLabel="Close department selection"
+          />
+
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <View style={styles.modalHeaderIcon}>
+                <Ionicons
+                  name="school-outline"
+                  size={24}
+                  color={COLORS.primary}
+                />
+              </View>
+
+              <View style={styles.modalHeaderText}>
+                <Text style={styles.modalTitle}>Choose Department</Text>
+                <Text style={styles.modalSubtitle}>
+                  Select your college program.
+                </Text>
+              </View>
+
+              <Pressable
+                onPress={closeDepartmentModal}
+                hitSlop={10}
+                style={styles.modalClose}
+                accessibilityRole="button"
+                accessibilityLabel="Close"
+              >
+                <Ionicons name="close" size={22} color={COLORS.textSecondary} />
+              </Pressable>
+            </View>
+
+            <ScrollView
+              style={styles.modalOptionsScroll}
+              contentContainerStyle={styles.modalOptionsContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {DEPARTMENTS.map((item) => {
+                const selected = department === item.value;
+
+                return (
+                  <Pressable
+                    key={item.value}
+                    style={[
+                      styles.departmentOption,
+                      selected && styles.optionSelected,
+                    ]}
+                    onPress={() => {
+                      setDepartment(item.value);
+                      setError(null);
+                      closeDepartmentModal();
+                    }}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected }}
+                  >
+                    <View
+                      style={[
+                        styles.optionIcon,
+                        selected && styles.optionIconSelected,
+                      ]}
+                    >
+                      <Ionicons
+                        name={item.icon}
+                        size={23}
+                        color={COLORS.primary}
+                      />
+                    </View>
+
+                    <View style={styles.optionText}>
+                      <Text
+                        style={[
+                          styles.optionCode,
+                          selected && styles.optionTextSelected,
+                        ]}
+                      >
+                        {item.value}
+                      </Text>
+                      <Text style={styles.optionDescription}>{item.name}</Text>
+                    </View>
+
+                    <View
+                      style={[
+                        styles.radioOuter,
+                        selected && styles.radioOuterSelected,
+                      ]}
+                    >
+                      {selected && <View style={styles.radioInner} />}
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+
+            <Pressable
+              style={styles.modalCancelButton}
+              onPress={closeDepartmentModal}
+              accessibilityRole="button"
+            >
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Year-level selection modal */}
+      <Modal
+        visible={showYearModal}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+        onRequestClose={closeYearModal}
+      >
+        <View style={styles.modalBackdrop}>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={closeYearModal}
+            accessibilityLabel="Close year-level selection"
+          />
+
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <View style={styles.modalHeaderIcon}>
+                <Ionicons
+                  name="calendar-outline"
+                  size={24}
+                  color={COLORS.primary}
+                />
+              </View>
+
+              <View style={styles.modalHeaderText}>
+                <Text style={styles.modalTitle}>Choose Year Level</Text>
+                <Text style={styles.modalSubtitle}>
+                  Select your current academic year.
+                </Text>
+              </View>
+
+              <Pressable
+                onPress={closeYearModal}
+                hitSlop={10}
+                style={styles.modalClose}
+                accessibilityRole="button"
+                accessibilityLabel="Close"
+              >
+                <Ionicons name="close" size={22} color={COLORS.textSecondary} />
+              </Pressable>
+            </View>
+
+            <View style={styles.yearOptions}>
+              {YEAR_LEVELS.map((year, index) => {
+                const selected = yearLevel === year;
+
+                return (
+                  <Pressable
+                    key={year}
+                    style={[
+                      styles.yearOption,
+                      selected && styles.optionSelected,
+                    ]}
+                    onPress={() => {
+                      setYearLevel(year);
+                      setError(null);
+                      closeYearModal();
+                    }}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected }}
+                  >
+                    <View
+                      style={[
+                        styles.yearNumber,
+                        selected && styles.yearNumberSelected,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.yearNumberText,
+                          selected && styles.yearNumberTextSelected,
+                        ]}
+                      >
+                        {index + 1}
+                      </Text>
+                    </View>
+
+                    <Text
+                      style={[
+                        styles.yearOptionText,
+                        selected && styles.optionTextSelected,
+                      ]}
+                    >
+                      {year}
+                    </Text>
+
+                    <View
+                      style={[
+                        styles.radioOuter,
+                        selected && styles.radioOuterSelected,
+                      ]}
+                    >
+                      {selected && <View style={styles.radioInner} />}
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            <Pressable
+              style={styles.modalCancelButton}
+              onPress={closeYearModal}
+              accessibilityRole="button"
+            >
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+    </View>
+  );
+}
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.summaryRow}>
+      <Text style={styles.summaryLabel}>{label}</Text>
+      <Text style={styles.summaryValue}>{value}</Text>
     </View>
   );
 }
@@ -546,7 +879,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     letterSpacing: 1,
     color: COLORS.textSecondary,
-    marginTop: 14,
+    marginTop: 17,
     marginBottom: 7,
   },
   inputContainer: {
@@ -572,56 +905,74 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     marginTop: 6,
   },
-  roleRow: {
+  selectorField: {
     flexDirection: "row",
-    gap: 10,
-  },
-  roleCard: {
-    flex: 1,
-    minHeight: 117,
-    position: "relative",
-    alignItems: "flex-start",
-    justifyContent: "center",
-    gap: 6,
-    padding: 12,
+    alignItems: "center",
+    gap: 11,
+    minHeight: 69,
+    padding: 11,
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: 15,
-    backgroundColor: COLORS.background,
+    borderRadius: 14,
   },
-  roleCardActive: {
-    borderColor: COLORS.primary,
+  selectorIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: COLORS.card,
+  },
+  selectorText: {
+    flex: 1,
+    gap: 4,
+  },
+  selectorValue: {
+    color: COLORS.textPrimary,
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  selectorHint: {
+    color: COLORS.textSecondary,
+    fontSize: 10,
+    lineHeight: 15,
+  },
+  selectionHint: {
+    fontSize: 11,
+    lineHeight: 16,
+    color: COLORS.textSecondary,
+    marginBottom: 10,
+  },
+  blockInfo: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    padding: 12,
+    marginTop: 15,
+    borderRadius: 14,
     backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
-  roleTitle: {
-    fontSize: 13,
+  blockInfoIcon: {
+    width: 37,
+    height: 37,
+    borderRadius: 12,
+    backgroundColor: COLORS.card,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  blockInfoContent: {
+    flex: 1,
+    gap: 4,
+  },
+  blockInfoTitle: {
+    fontSize: 12,
     fontWeight: "800",
     color: COLORS.textPrimary,
   },
-  roleTitleActive: {
-    color: COLORS.primary,
-  },
-  roleDescription: {
-    fontSize: 10,
-    lineHeight: 14,
-    color: COLORS.textSecondary,
-  },
-  roleCheck: {
-    position: "absolute",
-    top: 9,
-    right: 9,
-  },
-  teacherNote: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 8,
-    backgroundColor: COLORS.surface,
-    borderRadius: 12,
-    padding: 11,
-    marginTop: 11,
-  },
-  teacherNoteText: {
-    flex: 1,
+  blockInfoText: {
     fontSize: 11,
     lineHeight: 17,
     color: COLORS.textSecondary,
@@ -694,6 +1045,35 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: COLORS.textSecondary,
   },
+  registrationSummary: {
+    alignSelf: "stretch",
+    paddingHorizontal: 13,
+    paddingVertical: 5,
+    backgroundColor: COLORS.surface,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  summaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 9,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  summaryLabel: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+  },
+  summaryValue: {
+    flexShrink: 1,
+    fontSize: 11,
+    fontWeight: "800",
+    color: COLORS.textPrimary,
+    textAlign: "right",
+  },
   signInRow: {
     flexDirection: "row",
     justifyContent: "center",
@@ -721,5 +1101,189 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "700",
     color: COLORS.textSecondary,
+  },
+
+  // Selection modal styles
+  modalBackdrop: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(30, 20, 45, 0.55)",
+    paddingHorizontal: 20,
+    paddingVertical: 24,
+  },
+  modalCard: {
+    width: "100%",
+    maxWidth: 440,
+    maxHeight: "85%",
+    backgroundColor: COLORS.card,
+    borderRadius: 25,
+    padding: 19,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    overflow: "hidden",
+    elevation: 12,
+    shadowColor: "#21152F",
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 11,
+    marginBottom: 18,
+  },
+  modalHeaderIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 15,
+    backgroundColor: COLORS.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalHeaderText: {
+    flex: 1,
+    gap: 4,
+  },
+  modalTitle: {
+    fontSize: 17,
+    fontWeight: "900",
+    color: COLORS.textPrimary,
+  },
+  modalSubtitle: {
+    fontSize: 11,
+    lineHeight: 16,
+    color: COLORS.textSecondary,
+  },
+  modalClose: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    backgroundColor: COLORS.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalOptionsScroll: {
+    flexShrink: 1,
+  },
+  modalOptionsContent: {
+    gap: 10,
+    paddingBottom: 4,
+  },
+  departmentOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 11,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 16,
+    backgroundColor: COLORS.background,
+  },
+  optionSelected: {
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.surface,
+  },
+  optionIcon: {
+    width: 43,
+    height: 43,
+    borderRadius: 13,
+    backgroundColor: COLORS.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  optionIconSelected: {
+    backgroundColor: COLORS.card,
+  },
+  optionText: {
+    flex: 1,
+    gap: 5,
+  },
+  optionCode: {
+    fontSize: 14,
+    fontWeight: "900",
+    color: COLORS.textPrimary,
+  },
+  optionDescription: {
+    fontSize: 10,
+    lineHeight: 15,
+    color: COLORS.textSecondary,
+  },
+  optionTextSelected: {
+    color: COLORS.primary,
+  },
+  radioOuter: {
+    width: 21,
+    height: 21,
+    borderRadius: 11,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  radioOuterSelected: {
+    borderColor: COLORS.primary,
+  },
+  radioInner: {
+    width: 11,
+    height: 11,
+    borderRadius: 6,
+    backgroundColor: COLORS.primary,
+  },
+  modalCancelButton: {
+    minHeight: 46,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 15,
+    borderRadius: 14,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  modalCancelText: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: COLORS.primary,
+  },
+  yearOptions: {
+    gap: 10,
+  },
+  yearOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    minHeight: 61,
+    paddingHorizontal: 13,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 15,
+    backgroundColor: COLORS.background,
+  },
+  yearNumber: {
+    width: 37,
+    height: 37,
+    borderRadius: 12,
+    backgroundColor: COLORS.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  yearNumberSelected: {
+    backgroundColor: COLORS.card,
+  },
+  yearNumberText: {
+    fontSize: 14,
+    fontWeight: "900",
+    color: COLORS.textSecondary,
+  },
+  yearNumberTextSelected: {
+    color: COLORS.primary,
+  },
+  yearOptionText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: "800",
+    color: COLORS.textPrimary,
   },
 });

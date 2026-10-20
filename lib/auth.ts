@@ -45,9 +45,19 @@ export function useAuth(): AuthState {
   };
 }
 
+export type StudentYearLevel =
+  | "1st Year"
+  | "2nd Year"
+  | "3rd Year"
+  | "4th Year";
+
+export type StudentDepartment = "BSIT" | "BSHM" | "BSEntrep";
+
 export type SignUpProfile = {
   full_name: string;
-  role: "student" | "teacher";
+  role: "student";
+  department: StudentDepartment;
+  year_level: StudentYearLevel;
 };
 
 export async function signUp(
@@ -55,28 +65,44 @@ export async function signUp(
   password: string,
   profile?: SignUpProfile,
 ) {
+  const normalizedEmail = email.trim().toLowerCase();
+
   const { data, error } = await supabase.auth.signUp({
-    email: email.trim(),
+    email: normalizedEmail,
     password,
   });
 
-  if (error || !data.user) {
+  if (error) {
     return { data, error };
   }
 
+  if (!data.user) {
+    return {
+      data,
+      error: new Error("Supabase did not return a user account."),
+    };
+  }
+
+  // The registration RPC requires an authenticated session.
   if (profile && data.session) {
     const { error: profileError } = await supabase.rpc(
       "set_own_registration_profile",
       {
         target_full_name: profile.full_name.trim(),
-        target_role: profile.role,
+        target_role: "student",
+        target_department: profile.department,
+        target_year_level: profile.year_level,
       },
     );
 
     if (profileError) {
+      console.error("Registration profile setup failed:", profileError);
+
       return {
         data,
-        error: profileError,
+        error: new Error(
+          `Your account was created, but profile setup failed: ${profileError.message}`,
+        ),
       };
     }
   }
@@ -90,7 +116,7 @@ export async function signUp(
 
 export async function signIn(email: string, password: string) {
   const { data, error } = await supabase.auth.signInWithPassword({
-    email: email.trim(),
+    email: email.trim().toLowerCase(),
     password,
   });
 

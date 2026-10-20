@@ -15,12 +15,6 @@ export type AttendanceRecord = {
   scannedAt: string;
 };
 
-/**
- * Records attendance for an existing event.
- *
- * The event stored in Supabase is the source of truth for its schedule.
- * Scanning an unknown QR code will never create a new event.
- */
 export async function registerAttendance(
   rawPayload: string,
   studentId: string,
@@ -48,8 +42,7 @@ export async function registerAttendance(
     };
   }
 
-  const payload = parsed.payload;
-  const eventCode = payload.event?.trim();
+  const eventCode = parsed.payload.event?.trim();
 
   if (!eventCode) {
     return {
@@ -58,8 +51,18 @@ export async function registerAttendance(
     };
   }
 
-  // Only accept events that already exist in Supabase.
-  const event = await getEventByCode(eventCode);
+  let event;
+
+  try {
+    event = await getEventByCode(eventCode);
+  } catch (error) {
+    console.error("Could not retrieve event:", error);
+
+    return {
+      success: false,
+      message: "Could not load the event. Please try again.",
+    };
+  }
 
   if (!event) {
     return {
@@ -68,8 +71,7 @@ export async function registerAttendance(
     };
   }
 
-  // Validate using the actual event schedule stored in Supabase,
-  // not timestamps supplied by the QR code.
+  // Validate against the event schedule stored in Supabase.
   const now = Date.now();
 
   if (event.start_time) {
@@ -114,13 +116,20 @@ export async function registerAttendance(
     }
   }
 
-  // Record attendance against the event's database ID.
+  // Save attendance against the existing database event ID.
   const { error: attendanceError } = await supabase.from("attendance").insert({
     student_id: studentId,
     event_id: event.id,
   });
 
   if (attendanceError) {
+    console.error("Attendance registration failed:", {
+      code: attendanceError.code,
+      message: attendanceError.message,
+      details: attendanceError.details,
+      hint: attendanceError.hint,
+    });
+
     if (attendanceError.code === "23505") {
       return {
         success: false,
@@ -129,11 +138,15 @@ export async function registerAttendance(
       };
     }
 
-    console.error("Attendance registration failed:", attendanceError);
+    const detail = [attendanceError.message, attendanceError.details]
+      .filter(Boolean)
+      .join(" ");
 
     return {
       success: false,
-      message: "Could not record attendance. Please try again.",
+      message: `Attendance could not be saved: ${
+        detail || "Unknown database error."
+      }`,
       eventTitle: event.title,
     };
   }
@@ -171,6 +184,13 @@ export async function getAttendanceHistory(
   }));
 }
 
+export type StudentAttendanceProfile = {
+  full_name: string | null;
+  department: string | null;
+  year_level: string | null;
+  block: string | null;
+};
+
 export type TeacherEventAttendance = {
   eventId: string;
   eventCode: string;
@@ -182,6 +202,9 @@ export type TeacherEventAttendance = {
     studentId: string;
     scannedAt: string;
     studentName: string | null;
+    department: string | null;
+    yearLevel: string | null;
+    block: string | null;
   }[];
 };
 
@@ -237,27 +260,29 @@ export async function getTeacherEventAttendance(
   }
 
   const studentIds = [
-    ...new Set(attendance.map((record: any) => record.student_id)),
+    ...new Set(attendance.map((record: any) => record.student_id as string)),
   ];
 
-  let profileMap = new Map<string, string | null>();
+  const profileMap = new Map<string, StudentAttendanceProfile>();
 
   if (studentIds.length > 0) {
     const { data: profiles, error: profileError } = await supabase
       .from("profiles")
-      .select("id, full_name")
+      .select("id, full_name, department, year_level, block")
       .in("id", studentIds);
 
     if (profileError) {
       console.error("Could not load student profiles:", profileError);
     }
 
-    profileMap = new Map(
-      (profiles ?? []).map((profile: any) => [
-        profile.id,
-        profile.full_name ?? null,
-      ]),
-    );
+    for (const profile of profiles ?? []) {
+      profileMap.set(profile.id, {
+        full_name: profile.full_name ?? null,
+        department: profile.department ?? null,
+        year_level: profile.year_level ?? null,
+        block: profile.block ?? null,
+      });
+    }
   }
 
   return events.map((event: any) => {
@@ -272,11 +297,18 @@ export async function getTeacherEventAttendance(
       startTime: event.start_time,
       endTime: event.end_time,
       attendeeCount: records.length,
-      attendees: records.map((record: any) => ({
-        studentId: record.student_id,
-        studentName: profileMap.get(record.student_id) ?? null,
-        scannedAt: record.scanned_at,
-      })),
+      attendees: records.map((record: any) => {
+        const profile = profileMap.get(record.student_id);
+
+        return {
+          studentId: record.student_id,
+          studentName: profile?.full_name ?? null,
+          department: profile?.department ?? null,
+          yearLevel: profile?.year_level ?? null,
+          block: profile?.block ?? null,
+          scannedAt: record.scanned_at,
+        };
+      }),
     };
   });
 }
